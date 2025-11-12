@@ -1,1 +1,1 @@
-export { sendMagicLink } from "./sendMagicLink";
+export { sendMagicLink } from './sendMagicLink';

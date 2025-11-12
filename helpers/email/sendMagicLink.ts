@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import nodemailer from 'nodemailer';
 
 interface SendMagicLinkParams {
   email: string;
@@ -11,7 +11,7 @@ export async function sendMagicLink({ email, token, url }: SendMagicLinkParams) 
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === "true", // true for 465, false for other ports
+    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASSWORD,
@@ -20,9 +20,9 @@ export async function sendMagicLink({ email, token, url }: SendMagicLinkParams) 
 
   // Email content
   const mailOptions = {
-    from: `"${process.env.EMAIL_FROM_NAME || "LearnEssence"}" <${process.env.EMAIL_FROM_ADDRESS}>`,
+    from: `"${process.env.EMAIL_FROM_NAME || 'LearnEssence'}" <${process.env.EMAIL_FROM_ADDRESS}>`,
     to: email,
-    subject: "Sign in to LearnEssence",
+    subject: 'Sign in to LearnEssence',
     html: `
       <!DOCTYPE html>
       <html>
@@ -67,10 +67,10 @@ If you didn't request this email, you can safely ignore it.
   try {
     // Send the email
     const info = await transporter.sendMail(mailOptions);
-    console.log("Magic link email sent:", info.messageId);
+    console.log('Magic link email sent:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error("Error sending magic link email:", error);
-    throw new Error("Failed to send magic link email");
+    console.error('Error sending magic link email:', error);
+    throw new Error('Failed to send magic link email');
   }
 }
