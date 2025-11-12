@@ -17,23 +17,21 @@ export default function AuthPage() {
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsMagicLinkLoading(true);
-
     try {
-      const response = await fetch('/api/auth/send-magic-link', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const res = await signIn.magicLink({
+        email,
+        callbackURL: '/dashboard',
       });
 
-      if (response.ok) {
+      if (res.error) {
+        toast.error('Failed to send magic link', {
+          description: res.error.message || 'Please try again or use another sign-in method.',
+        });
+      } else {
         toast.success('Magic link sent!', {
           description: `Check your inbox at ${email}`,
         });
         setEmail('');
-      } else {
-        toast.error('Failed to send magic link', {
-          description: 'Please try again or use another sign-in method.',
-        });
       }
     } catch {
       toast.error('An error occurred', {
