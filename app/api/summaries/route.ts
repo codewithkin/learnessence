@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get query parameters
@@ -25,10 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Verify userId matches session
     if (userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch summaries
@@ -56,10 +50,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(summaries);
   } catch (error) {
     console.error('Error fetching summaries:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 

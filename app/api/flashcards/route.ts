@@ -11,10 +11,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get query parameters
@@ -25,10 +22,7 @@ export async function GET(request: NextRequest) {
 
     // Verify userId matches session
     if (userId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Forbidden' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch flashcard sets with card count
@@ -63,10 +57,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(flashcardSetsWithCount);
   } catch (error) {
     console.error('Error fetching flashcard sets:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -99,11 +90,13 @@ export async function POST(request: NextRequest) {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const cards = sentences.map((s) => {
-      const front = s.length > 120 ? s.slice(0, 117) + '...' : s;
-      const back = s; // simple echo back
-      return { front, back };
-    }).slice(0, 50); // limit to 50 cards
+    const cards = sentences
+      .map((s) => {
+        const front = s.length > 120 ? s.slice(0, 117) + '...' : s;
+        const back = s; // simple echo back
+        return { front, back };
+      })
+      .slice(0, 50); // limit to 50 cards
 
     const setTitle = title || `Flashcards - ${new Date().toLocaleDateString()}`;
 
