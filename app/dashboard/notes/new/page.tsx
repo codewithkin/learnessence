@@ -23,7 +23,7 @@ export default async function NewNotePage() {
 
           {/* Client editor component */}
           {/* Pass user id for save flow */}
-          <NoteEditor userId={session.user.id} userName={session.user.name ?? ''} />
+          <NoteEditor />
         </div>
       </main>
     </div>

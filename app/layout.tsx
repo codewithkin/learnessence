@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import '@mdxeditor/editor/style.css';
 import { Toaster } from '@/components/ui/sonner';
 import PageWrapper from '@/components/animations/PageWrapper';
 
