@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/sonner';
 import PageWrapper from '@/components/animations/PageWrapper';
+import QueryProvider from '@/components/QueryProvider';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -22,8 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} antialiased`}>
-        <PageWrapper>{children}</PageWrapper>
-        <Toaster richColors expand />
+        <QueryProvider>
+          <PageWrapper>{children}</PageWrapper>
+          <Toaster richColors expand />
+        </QueryProvider>
       </body>
     </html>
   );
