@@ -88,7 +88,7 @@ model Verification {
 model Note {
   id          String          @id @default(cuid())
   title       String?
-  content     String          // markdown content
+  content     String          // content: can be markdown text or a serialized editor state (e.g. Lexical JSON string)
   sourceType  NoteSourceType
   userId      String
   user        User            @relation(fields: [userId], references: [id])
