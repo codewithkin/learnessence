@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import { FileText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,7 +9,6 @@ interface Note {
   id: string;
   title: string | null;
   content: string;
-  sourceType: 'VOICE' | 'TEXT' | 'IMPORTED';
   updatedAt: Date;
 }
 
@@ -40,16 +38,7 @@ export function RecentNotes({ userId }: RecentNotesProps) {
     fetchNotes();
   }, [userId]);
 
-  const getSourceBadgeColor = (type: Note['sourceType']) => {
-    switch (type) {
-      case 'VOICE':
-        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300';
-      case 'TEXT':
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
-      case 'IMPORTED':
-        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300';
-    }
-  };
+  // No sourceType available on Note model — previews show content only.
 
   const getPreview = (content: string) => {
     return content.slice(0, 120) + (content.length > 120 ? '...' : '');
@@ -90,12 +79,7 @@ export function RecentNotes({ userId }: RecentNotesProps) {
             >
               <div className="flex items-start justify-between gap-2 mb-2">
                 <h3 className="font-medium text-foreground">{note.title || 'Untitled note'}</h3>
-                <Badge
-                  variant="secondary"
-                  className={`text-xs ${getSourceBadgeColor(note.sourceType)}`}
-                >
-                  {note.sourceType}
-                </Badge>
+                <div />
               </div>
               <p className="text-sm text-muted-foreground mb-1">{getPreview(note.content)}</p>
               <p className="text-xs text-muted-foreground">

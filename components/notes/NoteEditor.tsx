@@ -9,7 +9,7 @@ import EditableTitle from './EditableTitle';
 import RichTextEditor from './RichTextEditor';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import useNoteDraftStore from '@/lib/useNoteDraftStore';
+import useNoteDraftStore from '@/stores/useNoteDraftStore';
 
 type NoteEditorProps = {
   noteId?: string;
@@ -21,6 +21,8 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
   const [title, setTitleLocal] = useState(noteTitle ?? '');
   const [body, setBodyLocal] = useState(noteContent ?? '');
   const [currentNoteId, setCurrentNoteId] = useState<string | undefined>(noteId);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [titleConfirmed, setTitleConfirmed] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -58,7 +60,7 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
 
   const saveMutation = useMutation<any, Error, NoteVariables>({
     mutationFn: async ({ id, title, content }: NoteVariables) => {
-      const payload = { title: title || 'Untitled note', content, sourceType: 'TEXT' };
+      const payload = { title: title || 'Untitled note', content };
       if (id) {
         const { data } = await api.put(`/api/notes/${encodeURIComponent(id)}`, payload);
         return data;
@@ -91,6 +93,47 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
   // normalize to a boolean for rendering/loading states.
   const isSaving = Boolean((saveMutation as any).isLoading);
 
+  // Reset title confirmation when title changes away from the confirmed value
+  useEffect(() => {
+    if (!titleConfirmed) return;
+    const t = title?.trim().toLowerCase() ?? '';
+    if (t !== 'untitled note' && t !== 'untitled content') {
+      setTitleConfirmed(false);
+    }
+  }, [title, titleConfirmed]);
+
+  const handleSaveClick = () => {
+    // basic validation: require both title and content
+    const trimmedTitle = (title || '').trim();
+    const trimmedBody = (body || '').trim();
+
+    if (!trimmedTitle) {
+      toast.error('Please provide a title for the note');
+      return;
+    }
+
+    if (!trimmedBody) {
+      toast.error('Please provide note content before saving');
+      return;
+    }
+
+    const lowerTitle = trimmedTitle.toLowerCase();
+    // If title is the default-ish value, ask for confirmation once
+    if ((lowerTitle === 'untitled content' || lowerTitle === 'untitled note') && !titleConfirmed) {
+      setShowConfirmDialog(true);
+      return;
+    }
+
+    // proceed to save
+    saveMutation.mutate({ id: currentNoteId, title: trimmedTitle, content: body });
+  };
+
+  const confirmTitleAndSave = () => {
+    setTitleConfirmed(true);
+    setShowConfirmDialog(false);
+    saveMutation.mutate({ id: currentNoteId, title: title.trim(), content: body });
+  };
+
   return (
     <section className="w-full p-2 md:p-8 lg:p-12 overflow-y-auto">
       <TraceBreadcrumbs />
@@ -98,7 +141,7 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
         {/* Note title */}
         <EditableTitle
           value={title}
-          onChange={setTitle}
+          onChange={(v: string) => setTitleLocal(v)}
           placeholder="Note Title"
           className="w-full text-4xl font-semibold"
         />
@@ -106,7 +149,7 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
         {/* Note body */}
         <RichTextEditor
           value={body}
-          onChange={(html) => setBody(html)}
+          onChange={(html: string) => setBodyLocal(html)}
           placeholder="Start writing your note here..."
           className="w-full h-full"
         />
@@ -114,14 +157,36 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
 
       {/* Actions */}
       <article className="flex flex-row gap-4">
-        <Button
-          onClick={() => saveMutation.mutate({ id: currentNoteId, title, content: body })}
-          disabled={isSaving}
-        >
+        <Button onClick={handleSaveClick} disabled={isSaving}>
           {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {isSaving ? 'Saving changes' : 'Save changes'}
         </Button>
       </article>
+
+      {/* Confirmation dialog for untitled notes */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setShowConfirmDialog(false)}
+          />
+          <div className="relative w-full max-w-xl mx-4 bg-white rounded-lg shadow-lg p-6">
+            <h3 className="text-sm text-muted-foreground">LearnEssence</h3>
+            <h2 className="text-lg font-semibold mt-2">Confirm Title</h2>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Your note title appears to be "{title}". Are you sure you want to keep this as the
+              title?
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={confirmTitleAndSave}>Continue</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

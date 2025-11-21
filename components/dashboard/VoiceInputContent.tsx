@@ -171,7 +171,6 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
         body: JSON.stringify({
           title: `Voice Note - ${user?.name ?? ''} - ${new Date().toLocaleDateString()}`,
           content: transcription,
-          sourceType: 'VOICE',
         }),
       });
 
