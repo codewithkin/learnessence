@@ -85,7 +85,6 @@ export async function POST(request: NextRequest) {
         data: {
           title: text.slice(0, 60) || 'Untitled note',
           content: text,
-          sourceType: 'TEXT',
           userId: session.user.id,
         },
       });
