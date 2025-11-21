@@ -56,46 +56,26 @@ export default function NoteDetail({ note, isOwner }: { note: Note; isOwner: boo
   };
 
   return (
-    <div className="w-full flex flex-col h-screen bg-white">
-      <div className="max-w-4xl w-full mx-auto p-6">
-        <TraceBreadcrumbs />
-        {!editing ? (
-          <>
-            <h1 className="text-4xl font-semibold">{title}</h1>
-            <div className="mt-6 prose prose-slate dark:prose-invert whitespace-pre-wrap">
-              {body}
-            </div>
+    <div className="w-full">
+      {!editing && <TraceBreadcrumbs />}
+      {!editing ? (
+        <>
+          <h1 className="text-4xl font-semibold">{title}</h1>
+          <div className="mt-6 prose prose-slate dark:prose-invert whitespace-pre-wrap">{body}</div>
 
-            <div className="mt-8">{isOwner && <Button onClick={handleEdit}>Edit note</Button>}</div>
-          </>
-        ) : (
-          <>
-            <NoteEditor
-              noteId={note.id}
-              noteTitle={title}
-              noteContent={body}
-              hideActions
-              onTitleChange={(v: string) => setTitle(v)}
-              onBodyChange={(v: string) => setBody(v)}
-            />
-
-            <div className="mt-6 flex items-center gap-3">
-              <Button
-                onClick={handleSave}
-                disabled={isSaving}
-                className={isSaving ? 'opacity-50' : ''}
-                aria-busy={isSaving}
-              >
-                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {isSaving ? 'Saving changes' : 'Save changes'}
-              </Button>
-              <Button variant="secondary" onClick={handleCancel}>
-                Cancel
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
+          <div className="mt-8">{isOwner && <Button onClick={handleEdit}>Edit note</Button>}</div>
+        </>
+      ) : (
+        <>
+          <NoteEditor
+            noteId={note.id}
+            noteTitle={title}
+            noteContent={body}
+            onTitleChange={(v: string) => setTitle(v)}
+            onBodyChange={(v: string) => setBody(v)}
+          />
+        </>
+      )}
     </div>
   );
 }

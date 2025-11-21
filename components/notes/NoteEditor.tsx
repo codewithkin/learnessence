@@ -32,6 +32,9 @@ type NoteEditorProps = {
    * Base path to use when redirecting to a saved note.
    */
   redirectBase?: string;
+  /** When true the editor is embedded inside another layout and should
+   * not render top-level padding or breadcrumbs. */
+  embedded?: boolean;
 };
 
 export default function NoteEditor({
@@ -43,6 +46,7 @@ export default function NoteEditor({
   onBodyChange,
   redirectToNote,
   redirectBase = '/dashboard/notes',
+  embedded = false,
 }: NoteEditorProps) {
   const [title, setTitleLocal] = useState(noteTitle ?? '');
   const [body, setBodyLocal] = useState(noteContent ?? '');
@@ -180,10 +184,17 @@ export default function NoteEditor({
     saveMutation.mutate({ id: currentNoteId, title: title.trim(), content: body });
   };
 
+  // No internal padding — parent container should control spacing.
+  const sectionClass = 'w-full';
+
+  const articleClass = embedded
+    ? 'flex flex-col gap-4 mt-0 mb-0'
+    : 'flex flex-col gap-4 mt-4 mb-4 h-[90vh]';
+
   return (
-    <section className="w-full p-2 md:p-8 lg:p-12 overflow-y-auto">
-      <TraceBreadcrumbs />
-      <article className="flex flex-col gap-4 mt-4 mb-4 h-[90vh]">
+    <section className={sectionClass}>
+      {!embedded && <TraceBreadcrumbs />}
+      <article className={articleClass}>
         {/* Note title */}
         <EditableTitle
           value={title}

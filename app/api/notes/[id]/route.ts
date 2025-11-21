@@ -3,12 +3,16 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const id = params.id;
+    const resolved = await params;
+    const id = resolved?.id;
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     const note = await prisma.note.findUnique({ where: { id } });
@@ -25,12 +29,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> | { id: string } }
+) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const id = params.id;
+    const resolved = await params;
+    const id = resolved?.id;
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     const body = await request.json();

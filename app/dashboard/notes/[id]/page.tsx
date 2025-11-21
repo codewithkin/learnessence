@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import NoteDetail from '@/components/dashboard/NoteDetail';
+import Container from '@/components/layout/Container';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
@@ -18,7 +19,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
     // Missing id — show friendly not-found UI
     return (
       <div className="p-6">
-        <Sidebar user={session?.user as any} />
+        <Sidebar user={session?.user} />
         <div className="p-4">
           <div className="text-red-600 mb-3">Note not found</div>
           <Link href="/dashboard">
@@ -37,7 +38,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
   if (!note) {
     return (
       <div className="p-6">
-        <Sidebar user={session?.user as any} />
+        <Sidebar user={session?.user} />
         <div className="p-4">
           <div className="text-red-600 mb-3">Note not found</div>
           <Link href="/dashboard">
@@ -52,8 +53,10 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="flex h-screen bg-white">
-      <Sidebar user={session?.user as any} />
-      <NoteDetail note={note} isOwner={isOwner} />
+      <Sidebar user={session?.user} />
+      <Container>
+        <NoteDetail note={note} isOwner={isOwner} />
+      </Container>
     </div>
   );
 }
