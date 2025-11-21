@@ -8,11 +8,11 @@ import { usePathname } from 'next/navigation';
 import { Lightbulb } from 'lucide-react';
 
 interface SidebarProps {
-  user: {
+  user?: {
     name: string;
     email: string;
     image?: string | null;
-  };
+  } | null;
 }
 
 const navItems = [
@@ -73,28 +73,51 @@ export function Sidebar({ user }: SidebarProps) {
 
       {/* User Footer */}
       <div className="p-4 border-t border-border">
-        <div className="flex items-center gap-3 mb-2">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={user.image || undefined} alt={user.name} />
-            <AvatarFallback className="bg-indigo-100 text-indigo-600 text-sm">
-              {getInitials(user.name)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+        {user ? (
+          <>
+            <div className="flex items-center gap-3 mb-2">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={user.image || undefined} alt={user.name} />
+                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-sm">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              </div>
+            </div>
+            <Link href="/dashboard/settings">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 text-muted-foreground"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
+          </>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-3 mb-2">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="bg-indigo-100 text-indigo-600 text-sm">
+                  LE
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-foreground">Guest</p>
+                <p className="text-xs text-muted-foreground">Preview only</p>
+              </div>
+            </div>
+            <Link href="/auth">
+              <Button variant="outline" size="sm" className="w-full">
+                Sign in to edit
+              </Button>
+            </Link>
           </div>
-        </div>
-        <Link href="/dashboard/settings">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2 text-muted-foreground"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        </Link>
+        )}
       </div>
     </aside>
   );
