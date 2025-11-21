@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
     const body = await request.json();
-    const { title, content, sourceType } = body;
+    const { title, content } = body;
 
     const note = await prisma.note.findUnique({ where: { id } });
     if (!note) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -46,7 +46,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       data: {
         title: title ?? note.title,
         content: content ?? note.content,
-        sourceType: sourceType ?? note.sourceType,
       },
     });
 

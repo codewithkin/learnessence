@@ -59,14 +59,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, sourceType } = body;
+    const { title, content } = body;
 
     // Create note
     const note = await prisma.note.create({
       data: {
-        title: title || 'Untitled note',
+        title,
         content,
-        sourceType,
         userId: session.user.id,
       },
     });
