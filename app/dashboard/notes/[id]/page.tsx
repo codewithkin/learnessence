@@ -1,48 +1,47 @@
-'use client';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth';
+import { Sidebar } from '@/components/dashboard/Sidebar';
+import NoteDetail from '@/components/dashboard/NoteDetail';
+import { prisma } from '@/lib/prisma';
 
-import { useEffect, useState } from 'react';
-import NoteEditor from '@/components/notes/NoteEditor';
-import api from '@/lib/axiosClient';
+export default async function NotePage({ params }: { params: { id: string } }) {
+  const session = await auth.api.getSession({ headers: await headers() });
 
-export default function NotePage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const [loading, setLoading] = useState(true);
-  const [noteTitle, setNoteTitle] = useState<string | undefined>(undefined);
-  const [noteContent, setNoteContent] = useState<string | undefined>(undefined);
-  const [error, setError] = useState<string | null>(null);
+  // Allow anonymous viewing (no redirect to /auth) so notes can be shared publicly.
+  // Editing is still restricted to the owner when a session is available.
 
-  useEffect(() => {
-    let mounted = true;
-    setLoading(true);
-    api
-      .get(`/api/notes/${encodeURIComponent(id)}`)
-      .then((res) => {
-        if (!mounted) return;
-        const data = res.data;
-        setNoteTitle(data?.title ?? '');
-        setNoteContent(data?.content ?? '');
-      })
-      .catch((err) => {
-        console.error('Failed to load note', err);
-        if (!mounted) return;
-        setError('Failed to load note');
-      })
-      .finally(() => {
-        if (!mounted) return;
-        setLoading(false);
-      });
+  const { id } = params ?? {};
 
-    return () => {
-      mounted = false;
-    };
-  }, [id]);
+  if (!id) {
+    // Missing id — show friendly not-found UI
+    return (
+      <div className="p-6">
+        <Sidebar user={session?.user as any} />
+        <div className="p-4 text-red-600">Note not found</div>
+      </div>
+    );
+  }
 
-  if (loading) return <div className="p-4">Loading note…</div>;
-  if (error) return <div className="p-4 text-red-600">{error}</div>;
+  const note = await prisma.note.findUnique({
+    where: { id },
+    select: { id: true, title: true, content: true, userId: true },
+  });
+
+  if (!note) {
+    return (
+      <div className="p-6">
+        <Sidebar user={session?.user as any} />
+        <div className="p-4 text-red-600">Note not found</div>
+      </div>
+    );
+  }
+
+  const isOwner = !!session && note.userId === session.user.id;
 
   return (
-    <div className="w-full">
-      <NoteEditor noteId={id} noteTitle={noteTitle} noteContent={noteContent} />
+    <div className="flex h-screen bg-white">
+      <Sidebar user={session?.user as any} />
+      <NoteDetail note={note} isOwner={isOwner} />
     </div>
   );
 }

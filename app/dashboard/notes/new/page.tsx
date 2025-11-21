@@ -14,7 +14,7 @@ export default async function NewNotePage() {
   return (
     <div className="flex h-screen bg-white">
       <Sidebar user={session.user} />
-      <NoteEditor />
+      <NoteEditor {...({ redirectToNote: true, redirectBase: '/dashboard/notes' } as any)} />
     </div>
   );
 }

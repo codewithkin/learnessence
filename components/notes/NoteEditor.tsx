@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '../ui/button';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
@@ -15,9 +16,34 @@ type NoteEditorProps = {
   noteId?: string;
   noteTitle?: string;
   noteContent?: string;
+  /**
+   * When true the default Save/Actions inside NoteEditor will be hidden so a parent
+   * component can render external Save/Cancel controls.
+   */
+  hideActions?: boolean;
+  onTitleChange?: (v: string) => void;
+  onBodyChange?: (v: string) => void;
+  /**
+   * If true, after a successful save the editor will redirect to the note view page
+   * at `${redirectBase}/${noteId}` (or for newly created notes the returned `data.id`).
+   */
+  redirectToNote?: boolean;
+  /**
+   * Base path to use when redirecting to a saved note.
+   */
+  redirectBase?: string;
 };
 
-export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEditorProps) {
+export default function NoteEditor({
+  noteId,
+  noteTitle,
+  noteContent,
+  hideActions,
+  onTitleChange,
+  onBodyChange,
+  redirectToNote,
+  redirectBase = '/dashboard/notes',
+}: NoteEditorProps) {
   const [title, setTitleLocal] = useState(noteTitle ?? '');
   const [body, setBodyLocal] = useState(noteContent ?? '');
   const [currentNoteId, setCurrentNoteId] = useState<string | undefined>(noteId);
@@ -25,6 +51,7 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
   const [titleConfirmed, setTitleConfirmed] = useState(false);
 
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { title: savedTitle, body: savedBody, setTitle, setBody, clear } = useNoteDraftStore();
 
@@ -56,6 +83,17 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
     setBody(body);
   }, [body, setBody, noteId]);
 
+  // wrappers that update local state and also notify parent when provided
+  const handleTitleChange = (v: string) => {
+    setTitleLocal(v);
+    if (onTitleChange) onTitleChange(v);
+  };
+
+  const handleBodyChange = (v: string) => {
+    setBodyLocal(v);
+    if (onBodyChange) onBodyChange(v);
+  };
+
   type NoteVariables = { id?: string; title: string; content: string };
 
   const saveMutation = useMutation<any, Error, NoteVariables>({
@@ -82,10 +120,18 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
       toast.error('Failed to save note');
     },
     onSuccess(data) {
-      if (data && data.id) setCurrentNoteId(data.id);
-      queryClient.invalidateQueries({ queryKey: ['notes'] });
-      toast.success('Note saved');
-      clear();
+      try {
+        if (data && data.id) setCurrentNoteId(data.id);
+        queryClient.invalidateQueries({ queryKey: ['notes'] });
+        toast.success('Note saved');
+        clear();
+
+        if (redirectToNote && data && data.id) {
+          router.push(`${redirectBase}/${encodeURIComponent(data.id)}`);
+        }
+      } catch (err) {
+        console.error('Error in onSuccess handler', err);
+      }
     },
   });
 
@@ -141,7 +187,7 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
         {/* Note title */}
         <EditableTitle
           value={title}
-          onChange={(v: string) => setTitleLocal(v)}
+          onChange={(v: string) => handleTitleChange(v)}
           placeholder="Note Title"
           className="w-full text-4xl font-semibold"
         />
@@ -149,22 +195,29 @@ export default function NoteEditor({ noteId, noteTitle, noteContent }: NoteEdito
         {/* Note body */}
         <RichTextEditor
           value={body}
-          onChange={(html: string) => setBodyLocal(html)}
+          onChange={(html: string) => handleBodyChange(html)}
           placeholder="Start writing your note here..."
           className="w-full h-full"
         />
       </article>
 
       {/* Actions */}
-      <article className="flex flex-row gap-4">
-        <Button onClick={handleSaveClick} disabled={isSaving}>
-          {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          {isSaving ? 'Saving changes' : 'Save changes'}
-        </Button>
-      </article>
+      {!hideActions && (
+        <article className="flex flex-row gap-4">
+          <Button
+            onClick={handleSaveClick}
+            disabled={isSaving}
+            className={isSaving ? 'opacity-50' : ''}
+            aria-busy={isSaving}
+          >
+            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isSaving ? 'Saving changes' : 'Save changes'}
+          </Button>
+        </article>
+      )}
 
       {/* Confirmation dialog for untitled notes */}
-      {showConfirmDialog && (
+      {showConfirmDialog && !hideActions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/40"
