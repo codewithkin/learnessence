@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 interface TranscriptionViewProps {
   text?: string;
@@ -42,13 +43,21 @@ export default function TranscriptionView({ text = '', className = '' }: Transcr
     groups.push(group);
   }
 
-  const output = groups.join('\n\n');
-
   return (
     <div
       className={`bg-gray-400/10 rounded-xl p-4 min-h-[120px] w-full text-left whitespace-pre-wrap ${className}`}
     >
-      <p className="text-gray-900">{output}</p>
+      {groups.map((g, i) => (
+        <motion.p
+          key={i}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, delay: i * 0.06 }}
+          className={`text-gray-900 mb-3 ${i === groups.length - 1 ? 'mb-0' : ''}`}
+        >
+          {g}
+        </motion.p>
+      ))}
     </div>
   );
 }
