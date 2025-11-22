@@ -1,194 +1,78 @@
 'use client';
 
-import { useState, useRef, useEffect, type ChangeEvent } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, Square, Loader2, FileText, Sparkles, Layers, ArrowRight } from 'lucide-react';
+import { useNextjsAudioToTextRecognition } from 'nextjs-audio-to-text-recognition';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { useRouter } from 'next/navigation';
+import { Mic, Square, Loader2, FileText, Sparkles, Layers, ArrowRight } from 'lucide-react';
+import TranscriptionView from './TranscriptionView';
 
-interface VoiceInputContentProps {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
+export default function VoiceInputContent() {
+  const { isListening, transcript, startListening, stopListening } =
+    useNextjsAudioToTextRecognition({
+      lang: 'en-US',
+      continuous: true,
+      interimResults: true,
+    });
 
-type RecordingState = 'idle' | 'recording' | 'processing' | 'transcribed';
-
-export default function VoiceInputContent({ user }: VoiceInputContentProps) {
-  const [state, setState] = useState<RecordingState>('idle');
-  const [transcription, setTranscription] = useState('');
+  // UI-only state: duration and processing flag. We do not change the recognition logic.
   const [recordingDuration, setRecordingDuration] = useState(0);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const router = useRouter();
+  const timerRef = useRef<number | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [finalTranscript, setFinalTranscript] = useState('');
 
   useEffect(() => {
+    if (isListening) {
+      setRecordingDuration(0);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      timerRef.current = window.setInterval(() => {
+        setRecordingDuration((s) => s + 1);
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, []);
+  }, [isListening]);
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      chunksRef.current = [];
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' });
-        stream.getTracks().forEach((track) => track.stop());
-        await processRecording(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setState('recording');
-      setRecordingDuration(0);
-
-      // Start timer
-      timerRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
-      }, 1000);
-    } catch (error) {
-      console.error('Error accessing microphone:', error);
-      alert('Could not access microphone. Please check permissions.');
-    }
-  };
-
-  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    // Basic client-side size check (match server limit)
-    const MAX_BYTES = 10 * 1024 * 1024;
-    if (file.size > MAX_BYTES) {
-      alert('File too large. Max 10MB allowed.');
-      return;
-    }
-
-    // Process the uploaded file directly
-    await processRecording(file);
-  };
-
-  const generateSummary = async () => {
-    try {
-      const res = await fetch('/api/summaries', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: transcription }),
-      });
-
-      if (!res.ok) throw new Error('Failed to generate summary');
-      router.push('/dashboard/summaries');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to generate summary');
-    }
-  };
-
-  const createFlashcardsAction = async () => {
-    try {
-      const res = await fetch('/api/flashcards', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: transcription }),
-      });
-
-      if (!res.ok) throw new Error('Failed to create flashcards');
-      router.push('/dashboard/flashcards');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to create flashcards');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && state === 'recording') {
-      mediaRecorderRef.current.stop();
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+  useEffect(() => {
+    // Log transcript whenever it updates
+    if (transcript) {
+      console.log('Transcript:', transcript);
+      // If recording has stopped, persist the last transcript so it remains visible
+      if (!isListening) {
+        setFinalTranscript(transcript);
+        if (isProcessing) setIsProcessing(false);
       }
-      setState('processing');
     }
+  }, [transcript, isProcessing]);
+
+  const handleStart = () => {
+    setIsProcessing(false);
+    startListening();
   };
 
-  const processRecording = async (audioBlob: Blob) => {
-    try {
-      // Prepare form data and send audio blob to our server transcribe endpoint
-      const form = new FormData();
-      // Use a filename with webm extension
-      form.append('file', audioBlob, 'recording.webm');
-
-      setState('processing');
-
-      const res = await fetch('/api/transcribe', {
-        method: 'POST',
-        body: form,
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Transcription failed (${res.status})`);
-      }
-
-      const data = await res.json();
-      // OpenAI's transcription response normally contains `text`.
-      const text = data.text ?? data.transcription ?? data.result ?? '';
-
-      setTranscription(text);
-      setState('transcribed');
-    } catch (error) {
-      console.error('Transcription error:', error);
-      alert('Failed to transcribe recording. Please try again.');
-      setState('idle');
-    }
+  const handleStop = () => {
+    // Show processing UI until transcript updates
+    setIsProcessing(true);
+    stopListening();
   };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const saveAsNote = async () => {
-    try {
-      const response = await fetch('/api/notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: `Voice Note - ${user?.name ?? ''} - ${new Date().toLocaleDateString()}`,
-          content: transcription,
-        }),
-      });
-
-      if (response.ok) {
-        router.push('/dashboard');
-      } else {
-        throw new Error('Failed to save note');
-      }
-    } catch (error) {
-      console.error('Error saving note:', error);
-      alert('Failed to save note. Please try again.');
-    }
-  };
-
-  const resetRecording = () => {
-    setTranscription('');
-    setRecordingDuration(0);
-    setState('idle');
   };
 
   return (
@@ -200,7 +84,7 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
 
       <AnimatePresence mode="wait">
         {/* Idle State - Before Recording */}
-        {state === 'idle' && (
+        {!isListening && !transcript && !isProcessing && (
           <motion.div
             key="idle"
             initial={{ opacity: 0, y: 20 }}
@@ -219,33 +103,25 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                   transcribed automatically.
                 </p>
                 <Button
-                  onClick={startRecording}
+                  onClick={handleStart}
                   size="lg"
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 text-lg rounded-xl"
                 >
                   <Mic className="w-5 h-5 mr-2" />
                   Start Recording
                 </Button>
-                <div className="mt-4">
-                  <label className="inline-flex items-center cursor-pointer">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                    <span className="ml-2 text-sm text-gray-600 underline">
-                      Or upload an audio file
-                    </span>
-                  </label>
-                </div>
+                {/* upload UI removed per request */}
+                {/* show last transcript (if any) inside the card */}
+                {finalTranscript ? (
+                  <TranscriptionView text={finalTranscript} className="mt-6" />
+                ) : null}
               </div>
             </Card>
           </motion.div>
         )}
 
         {/* Recording State - Recording in Progress */}
-        {state === 'recording' && (
+        {isListening && (
           <motion.div
             key="recording"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -260,24 +136,13 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                   animate={{
                     scale: [1, 1.1, 1],
                   }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                 >
                   <Mic className="w-12 h-12 text-red-600" />
                   <motion.div
                     className="absolute inset-0 rounded-full bg-red-400"
-                    animate={{
-                      scale: [1, 1.3, 1],
-                      opacity: [0.5, 0, 0.5],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                    }}
+                    animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                   />
                 </motion.div>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-50 rounded-full mb-4">
@@ -291,7 +156,7 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                   Speak clearly into your microphone. Your voice is being captured.
                 </p>
                 <Button
-                  onClick={stopRecording}
+                  onClick={handleStop}
                   size="lg"
                   variant="outline"
                   className="px-8 py-6 text-lg rounded-xl border-2 border-red-600 text-red-600 hover:bg-red-50"
@@ -299,13 +164,15 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                   <Square className="w-5 h-5 mr-2 fill-current" />
                   Stop Recording
                 </Button>
+                {/* live transcript while recording */}
+                <TranscriptionView text={transcript} className="mt-6" />
               </div>
             </Card>
           </motion.div>
         )}
 
         {/* Processing State */}
-        {state === 'processing' && (
+        {!isListening && isProcessing && (
           <motion.div
             key="processing"
             initial={{ opacity: 0 }}
@@ -320,13 +187,15 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                 </div>
                 <h2 className="text-2xl font-semibold text-gray-900 mb-3">Processing Recording</h2>
                 <p className="text-gray-600">Transcribing your audio, please wait...</p>
+                {/* show any partial or final transcript while processing inside the card */}
+                <TranscriptionView text={transcript || finalTranscript} className="mt-6" />
               </div>
             </Card>
           </motion.div>
         )}
 
         {/* Transcribed State - Show Actions */}
-        {state === 'transcribed' && (
+        {!isListening && transcript && (
           <motion.div
             key="transcribed"
             initial={{ opacity: 0, y: 20 }}
@@ -337,7 +206,7 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
           >
             <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
                   <FileText className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="flex-1">
@@ -350,19 +219,25 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">{transcription}</p>
+              {/* transcript area (final transcript persisted to `finalTranscript`) */}
+              <div className="mb-6">
+                <TranscriptionView text={finalTranscript} />
               </div>
-
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={saveAsNote}
+                  onClick={() => {}}
                   className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-6 rounded-xl"
                 >
                   <FileText className="w-5 h-5 mr-2" />
                   Save as Note
                 </Button>
-                <Button onClick={resetRecording} variant="outline" className="px-6 py-6 rounded-xl">
+                <Button
+                  onClick={() => {
+                    setRecordingDuration(0); /* reset UI only */
+                  }}
+                  variant="outline"
+                  className="px-6 py-6 rounded-xl"
+                >
                   Record Again
                 </Button>
               </div>
@@ -374,7 +249,6 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                 <Button
                   variant="outline"
                   className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
-                  onClick={generateSummary}
                 >
                   <Sparkles className="w-5 h-5 mr-3 text-amber-500" />
                   <div className="text-left">
@@ -385,7 +259,6 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={createFlashcardsAction}
                   className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
                 >
                   <Layers className="w-5 h-5 mr-3 text-indigo-600" />
@@ -400,6 +273,8 @@ export default function VoiceInputContent({ user }: VoiceInputContentProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* persistent transcript area removed — transcript now shown inside each card */}
     </div>
   );
 }
