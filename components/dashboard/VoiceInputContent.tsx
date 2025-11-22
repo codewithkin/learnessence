@@ -8,7 +8,8 @@ import { Card } from '@/components/ui/card';
 import { Mic, Square, Loader2, FileText, Sparkles, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
+import api from '@/lib/axiosClient';
+import { toast } from 'sonner';
 import TranscriptionView from './TranscriptionView';
 
 export default function VoiceInputContent() {
@@ -82,32 +83,29 @@ export default function VoiceInputContent() {
   const MotionButton = motion(Button);
 
   const queryClient = useQueryClient();
+  const flashcardsMutation = useMutation<any, any, { text: string }>({
+    mutationFn: (payload) => api.post('/api/flashcards', payload),
+    onSuccess: () => {
+      toast.success('Flashcards generated');
+      setTimeout(() => router.push('/dashboard/flashcards'), 900);
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error('Failed to generate flashcards');
+    },
+  });
 
-  const flashcardsMutation = useMutation(
-    (payload: { text: string }) => axios.post('/api/flashcards', payload),
-    {
-      onSuccess: () => {
-        router.push('/dashboard/flashcards');
-      },
-      onError: (err) => {
-        console.error(err);
-        alert('Failed to generate flashcards');
-      },
-    }
-  );
-
-  const notesMutation = useMutation(
-    (payload: { title: string; content: string }) => axios.post('/api/notes', payload),
-    {
-      onSuccess: () => {
-        router.push('/dashboard');
-      },
-      onError: (err) => {
-        console.error(err);
-        alert('Failed to save note');
-      },
-    }
-  );
+  const notesMutation = useMutation<any, any, { title: string; content: string }>({
+    mutationFn: (payload) => api.post('/api/notes', payload),
+    onSuccess: () => {
+      toast.success('Note saved');
+      setTimeout(() => router.push('/dashboard'), 900);
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error('Failed to save note');
+    },
+  });
 
   const handleGenerateFlashcards = () => {
     flashcardsMutation.mutate({ text: finalTranscript });
@@ -265,7 +263,7 @@ export default function VoiceInputContent() {
           </motion.div>
         )}
 
-        {/* Transcribed State - Show Actions */}
+        {/* Transcribed State - Show Actions and recording summary side-by-side on md+ */}
         {!isListening && finalTranscript && (
           <motion.div
             key="transcribed"
@@ -275,78 +273,133 @@ export default function VoiceInputContent() {
             transition={{ duration: 0.3 }}
             className="space-y-6 mt-4"
           >
-            <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
-                  <FileText className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-1">
-                    Transcription Complete
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Duration: {formatDuration(recordingDuration)}
+            <div className="md:flex md:items-start md:gap-6">
+              {/* Left: recording summary card (keeps visual context of the recording) */}
+              <div className="md:w-1/2">
+                <Card className="p-8 rounded-2xl shadow-sm border border-gray-200 h-full">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                      <Mic className="w-6 h-6 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Recording</h3>
+                      <p className="text-sm text-gray-600">
+                        Duration: {formatDuration(recordingDuration)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-gray-600 mb-6">
+                    This shows the recording summary for the transcription you just completed.
                   </p>
-                </div>
-              </div>
 
-              {/* transcript area (final transcript persisted to `finalTranscript`) */}
-              <div className="mb-6">
-                <TranscriptionView text={finalTranscript} />
-              </div>
-              <div className="flex items-center gap-3">
-                <MotionButton
-                  onClick={handleGenerateFlashcards}
-                  variant="outline"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: 0.04 }}
-                  className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                >
-                  <Sparkles className="w-5 h-5 mr-3 text-amber-500" />
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Generate Flashcards</div>
-                    <div className="text-xs text-gray-600">Create study flashcards</div>
+                  <div className="flex items-center gap-3">
+                    <MotionButton
+                      onClick={newRecording}
+                      variant="outline"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.18 }}
+                      className="px-6 py-3 rounded-xl"
+                    >
+                      New Recording
+                    </MotionButton>
                   </div>
-                  <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
-                </MotionButton>
-
-                <MotionButton
-                  onClick={handleGenerateNotes}
-                  variant="outline"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: 0.08 }}
-                  className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                >
-                  <FileText className="w-5 h-5 mr-3 text-indigo-600" />
-                  <div className="text-left">
-                    <div className="font-medium text-gray-900">Generate Notes</div>
-                    <div className="text-xs text-gray-600">Save transcription as a note</div>
-                  </div>
-                  <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
-                </MotionButton>
-
-                <MotionButton
-                  onClick={newRecording}
-                  variant="outline"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: 0.12 }}
-                  className="px-6 py-6 rounded-xl"
-                >
-                  New Recording
-                </MotionButton>
+                </Card>
               </div>
-            </Card>
 
-            {/* Quick Actions card removed per request */}
+              {/* Right: transcription complete card */}
+              <div className="md:w-1/2 mt-6 md:mt-0">
+                <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
+                      <FileText className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-xl font-semibold text-gray-900 mb-1">
+                        Transcription Complete
+                      </h2>
+                      <p className="text-sm text-gray-600">
+                        Duration: {formatDuration(recordingDuration)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* transcript area (final transcript persisted to `finalTranscript`) */}
+                  <div className="mb-6">
+                    <TranscriptionView text={finalTranscript} />
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Flashcards button: disabled while loading */}
+                    <MotionButton
+                      onClick={handleGenerateFlashcards}
+                      variant={flashcardsMutation.isError ? 'destructive' : 'outline'}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: 0.04 }}
+                      className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
+                      disabled={flashcardsMutation.isPending}
+                    >
+                      {flashcardsMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
+                      ) : (
+                        <Sparkles className="w-5 h-5 mr-3 text-amber-500" />
+                      )}
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900">Generate Flashcards</div>
+                        <div className="text-xs text-gray-600">Create study flashcards</div>
+                      </div>
+                      {!flashcardsMutation.isPending && (
+                        <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
+                      )}
+                    </MotionButton>
+
+                    {/* Notes button */}
+                    <MotionButton
+                      onClick={handleGenerateNotes}
+                      variant={notesMutation.isError ? 'destructive' : 'outline'}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: 0.08 }}
+                      className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
+                      disabled={notesMutation.isPending}
+                    >
+                      {notesMutation.isPending ? (
+                        <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
+                      ) : (
+                        <FileText className="w-5 h-5 mr-3 text-indigo-600" />
+                      )}
+                      <div className="text-left">
+                        <div className="font-medium text-gray-900">Generate Notes</div>
+                        <div className="text-xs text-gray-600">Save transcription as a note</div>
+                      </div>
+                      {!notesMutation.isPending && (
+                        <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
+                      )}
+                    </MotionButton>
+
+                    <MotionButton
+                      onClick={newRecording}
+                      variant="outline"
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2, delay: 0.12 }}
+                      className="px-6 py-6 rounded-xl"
+                    >
+                      New Recording
+                    </MotionButton>
+                  </div>
+                </Card>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
