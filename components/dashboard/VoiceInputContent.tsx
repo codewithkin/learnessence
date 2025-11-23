@@ -381,10 +381,7 @@ According to the U.S. National Bureau of Economic Research (the official arbiter
                   className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <FlashCardCarousel
-                    cards={generatedFlashcards}
-                    title="Your Generated Flashcards"
-                  />
+                  <FlashCardCarousel cards={generatedFlashcards} />
                 </div>
               </motion.div>
             )}

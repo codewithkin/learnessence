@@ -19,7 +19,7 @@ export default function TranscriptionView({ text = '', className = '' }: Transcr
   if (!normalized) {
     return (
       <div
-        className={`bg-gray-400/10 rounded-xl p-4 min-h-[120px] w-full text-left whitespace-pre-wrap ${className}`}
+        className={`bg-gray-400/10 rounded-xl p-4 min-h-[120px] max-h-[200px] overflow-y-auto w-full text-left whitespace-pre-wrap ${className}`}
       >
         <p className="text-gray-900">{''}</p>
       </div>
