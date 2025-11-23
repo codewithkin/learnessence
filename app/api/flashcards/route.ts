@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create the flashcards
-    const flashCards = await prisma.flashcard.createMany({
+    await prisma.flashcard.createMany({
       data: parsedResponse.flashCards.map((card: any) => ({
         question: card.question,
         answer: card.answer,
@@ -115,7 +115,15 @@ export async function POST(request: NextRequest) {
       })),
     });
 
-    return NextResponse.json(flashCards);
+    // Return the flashcards with IDs (generate temporary IDs for frontend)
+    const flashcardsWithIds = parsedResponse.flashCards.map((card: any, index: number) => ({
+      id: `${flashcardSet.id}-${index}`,
+      question: card.question,
+      answer: card.answer,
+      setId: flashcardSet.id,
+    }));
+
+    return NextResponse.json(flashcardsWithIds, { status: 201 });
   } catch (error) {
     console.error('Error creating flashcards:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
