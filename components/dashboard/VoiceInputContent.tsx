@@ -52,37 +52,146 @@ export default function VoiceInputContent() {
     };
   }, [isListening]);
 
+  // When recording stops, finalize transcript and clear processing state.
   useEffect(() => {
-    // Log transcript whenever it updates
-    if (transcript) {
-      console.log('Transcript:', transcript);
-      // If recording has stopped, persist the last transcript so it remains visible
-      if (!isListening) {
-        setFinalTranscript(`
-          The Great Recession was a period of market decline in economies around the world that occurred from late 2007 to mid-2009,[1] overlapping with the closely related 2008 financial crisis. The scale and timing of the recession varied from country to country (see map).[2][3] At the time, the International Monetary Fund (IMF) concluded that it was the most severe economic and financial meltdown since the Great Depression.
+    let t: number | undefined;
 
-The causes of the Great Recession include a combination of vulnerabilities that developed in the financial system, along with a series of triggering events that began with the bursting of the United States housing bubble in 2005–2012. When housing prices fell and homeowners began to abandon their mortgages, the value of mortgage-backed securities held by investment banks declined in 2007–2008, causing several to collapse or be bailed out in September 2008. This 2007–2008 phase was called the subprime mortgage crisis.
+    if (!isListening) {
+      // Allow a short grace period for any final interim results.
+      t = window.setTimeout(() => {
+        if (transcript) {
+          console.log('Transcript (final):', transcript);
+          setFinalTranscript(
+            process.env.NODE_ENV === 'development'
+              ? `            From Wikipedia, the free encyclopedia
+For background on financial market events beginning in 2007, see 2008 financial crisis.For the 2020 recession, see COVID - 19 recession.
+Not to be confused with Great Resignation.
+Great Recession
 
-The combination of banks being unable to provide funds to businesses and homeowners paying down debt rather than borrowing and spending resulted in the Great Recession. The recession officially began in the U.S. in December 2007 and lasted until June 2009, thus extending over 19 months.[4][5] As with most other recessions, it appears that no known formal theoretical or empirical model was able to accurately predict the advance of this recession, except for minor signals in the sudden rise of forecast probabilities, which were still well under 50%.[6]
+World map showing real GDP growth rates for 2009; countries in brown were in a recession.
+Date	December 2007 – June 2009(c. 1 year; 7 months)
+Location	Worldwide
+Type	Recession
+      Cause(disputed)
+      Real - estate bubbles bursting
+US housing policy
+Limited financial regulation
+Outcome	Impact differed geographically
+Part of a series on the
+Great Recession
+Major aspects
+Subprime mortgage crisis2000s energy crisis2000s United States housing bubble2000s United States housing market correction2008 financial crisis2008–2010 automotive industry crisisDodd–Frank Wall Street Reform and Consumer Protection ActEuro area crisis
+      Causes
+Summit meetings
+Government response and policy proposals
+Business failures
+      Regions
+      Timeline
+      vte
+The Great Recession was a period of market decline in economies around the world that occurred from late 2007 to mid - 2009, [1] overlapping with the closely related 2008 financial crisis.The scale and timing of the recession varied from country to country(see map).[2][3] At the time, the International Monetary Fund(IMF) concluded that it was the most severe economic and financial meltdown since the Great Depression.
+
+The causes of the Great Recession include a combination of vulnerabilities that developed in the financial system, along with a series of triggering events that began with the bursting of the United States housing bubble in 2005–2012. When housing prices fell and homeowners began to abandon their mortgages, the value of mortgage - backed securities held by investment banks declined in 2007–2008, causing several to collapse or be bailed out in September 2008. This 2007–2008 phase was called the subprime mortgage crisis.
+
+The combination of banks being unable to provide funds to businesses and homeowners paying down debt rather than borrowing and spending resulted in the Great Recession.The recession officially began in the U.S.in December 2007 and lasted until June 2009, thus extending over 19 months.[4][5] As with most other recessions, it appears that no known formal theoretical or empirical model was able to accurately predict the advance of this recession, except for minor signals in the sudden rise of forecast probabilities, which were still well under 50 %.[6]
 
 The recession was not felt equally around the world; whereas most of the world's developed economies, particularly in North America, South America and Europe, fell into a severe, sustained recession, many more recently developing economies suffered far less impact, particularly China, India and Indonesia, whose economies grew substantially during this period. Similarly, Oceania suffered minimal impact, in part due to its proximity to Asian markets.
 
-Terminology
-Two definitions of the term "economic recession" exist: one sense referring generally to "a period of reduced economic activity"[7] and ongoing hardship; and a technical definition used in economics, which is defined operationally, specifically the contraction phase of a business cycle with two or more consecutive quarters of GDP contraction (negative GDP growth rate). The latter is typically used to influence abrupt changes in monetary policy.
+      Terminology
+Two definitions of the term "economic recession" exist: one sense referring generally to "a period of reduced economic activity"[7] and ongoing hardship; and a technical definition used in economics, which is defined operationally, specifically the contraction phase of a business cycle with two or more consecutive quarters of GDP contraction(negative GDP growth rate).The latter is typically used to influence abrupt changes in monetary policy.
 
 Under the technical definition, the recession ended in the United States in June or July 2009.[8][9][10][11]
 
-Journalist Robert Kuttner has argued that 'The Great Recession' is a misnomer. According to Kuttner, "recessions are mild dips in the business cycle that are either self-correcting or soon cured by modest fiscal or monetary stimulus. Because of the continuing deflationary trap, it would be more accurate to call this decade's stagnant economy The Lesser Depression or The Great Deflation."[12]
+Journalist Robert Kuttner has argued that 'The Great Recession' is a misnomer.According to Kuttner, "recessions are mild dips in the business cycle that are either self-correcting or soon cured by modest fiscal or monetary stimulus. Because of the continuing deflationary trap, it would be more accurate to call this decade's stagnant economy The Lesser Depression or The Great Deflation."[12]
 
-Overview
-The Great Recession met the IMF criteria for being a global recession only in the single calendar year 2009.[13][14] That IMF definition requires a decline in annual real world GDP per capita. Despite the fact that quarterly data are being used as recession definition criteria by all G20 members, representing 85% of the world GDP,[15] the International Monetary Fund (IMF) has decided – in the absence of a complete data set – not to declare/measure global recessions according to quarterly GDP data. The seasonally adjusted PPP‑weighted real GDP for the G20‑zone, however, is a good indicator for the world GDP, and it was measured to have suffered a direct quarter on quarter decline during the three quarters from Q3‑2008 until Q1‑2009, which more accurately mark when the recession took place at the global level.[16]
+      Overview
+The Great Recession met the IMF criteria for being a global recession only in the single calendar year 2009.[13][14] That IMF definition requires a decline in annual real world GDP per capita.Despite the fact that quarterly data are being used as recession definition criteria by all G20 members, representing 85 % of the world GDP, [15] the International Monetary Fund(IMF) has decided – in the absence of a complete data set – not to declare / measure global recessions according to quarterly GDP data.The seasonally adjusted PPP‑weighted real GDP for the G20‑zone, however, is a good indicator for the world GDP, and it was measured to have suffered a direct quarter on quarter decline during the three quarters from Q3‑2008 until Q1‑2009, which more accurately mark when the recession took place at the global level.[16]
 
-According to the U.S. National Bureau of Economic Research (the official arbiter of U.S. recessions), the recession began in December 2007 and ended in June 2009, and thus extended over eighteen months.[5][17]
-          `);
+According to the U.S.National Bureau of Economic Research(the official arbiter of U.S.recessions), the recession began in December 2007 and ended in June 2009, and thus extended over eighteen months.[5][17]
+
+A number of people queuing at the door of a branch of the Northern Rock bank.
+A bank run at a branch of the Northern Rock bank in Brighton, England, on September 14, 2007, amid speculation of problems, prior to its 2008 nationalisation
+The years leading up to the crisis were characterized by an exorbitant rise in asset prices and associated boom in economic demand.[18] Further, the U.S.shadow banking system(i.e., non - depository financial institutions such as investment banks) had grown to rival the depository system yet was not subject to the same regulatory oversight, making it vulnerable to a bank run.[19]
+
+      U.S.mortgage - backed securities, which had risks that were hard to assess, were marketed around the world, as they offered higher yields than U.S.government bonds.Many of these securities were backed by subprime mortgages, which collapsed in value when the U.S.housing bubble burst during 2006 and homeowners began to default on their mortgage payments in large numbers starting in 2007.[20]
+
+The emergence of subprime loan losses in 2007 began the crisis and exposed other risky loans and over - inflated asset prices.With loan losses mounting and the fall of Lehman Brothers on September 15, 2008, a major panic broke out on the inter - bank loan market.There was the equivalent of a bank run on the shadow banking system, resulting in many large and well established investment banks and commercial banks in the United States and Europe suffering huge losses and even facing bankruptcy, resulting in massive public financial assistance(government bailouts).[21]
+
+The global recession that followed resulted in a sharp drop in international trade, rising unemployment and slumping commodity prices.[22] Several economists predicted that recovery might not appear until 2011 and that the recession would be the worst since the Great Depression of the 1930s.[23][24] Economist Paul Krugman once commented on this as seemingly the beginning of "a second Great Depression".[25]
+            `
+              : transcript
+          );
+        } else {
+          // No transcript arrived — clear any final transcript (remove placeholder).
+          setFinalTranscript(
+            process.env.NODE_ENV === 'development'
+              ? `            From Wikipedia, the free encyclopedia
+For background on financial market events beginning in 2007, see 2008 financial crisis.For the 2020 recession, see COVID - 19 recession.
+Not to be confused with Great Resignation.
+Great Recession
+
+World map showing real GDP growth rates for 2009; countries in brown were in a recession.
+Date	December 2007 – June 2009(c. 1 year; 7 months)
+Location	Worldwide
+Type	Recession
+      Cause(disputed)
+      Real - estate bubbles bursting
+US housing policy
+Limited financial regulation
+Outcome	Impact differed geographically
+Part of a series on the
+Great Recession
+Major aspects
+Subprime mortgage crisis2000s energy crisis2000s United States housing bubble2000s United States housing market correction2008 financial crisis2008–2010 automotive industry crisisDodd–Frank Wall Street Reform and Consumer Protection ActEuro area crisis
+      Causes
+Summit meetings
+Government response and policy proposals
+Business failures
+      Regions
+      Timeline
+      vte
+The Great Recession was a period of market decline in economies around the world that occurred from late 2007 to mid - 2009, [1] overlapping with the closely related 2008 financial crisis.The scale and timing of the recession varied from country to country(see map).[2][3] At the time, the International Monetary Fund(IMF) concluded that it was the most severe economic and financial meltdown since the Great Depression.
+
+The causes of the Great Recession include a combination of vulnerabilities that developed in the financial system, along with a series of triggering events that began with the bursting of the United States housing bubble in 2005–2012. When housing prices fell and homeowners began to abandon their mortgages, the value of mortgage - backed securities held by investment banks declined in 2007–2008, causing several to collapse or be bailed out in September 2008. This 2007–2008 phase was called the subprime mortgage crisis.
+
+The combination of banks being unable to provide funds to businesses and homeowners paying down debt rather than borrowing and spending resulted in the Great Recession.The recession officially began in the U.S.in December 2007 and lasted until June 2009, thus extending over 19 months.[4][5] As with most other recessions, it appears that no known formal theoretical or empirical model was able to accurately predict the advance of this recession, except for minor signals in the sudden rise of forecast probabilities, which were still well under 50 %.[6]
+
+The recession was not felt equally around the world; whereas most of the world's developed economies, particularly in North America, South America and Europe, fell into a severe, sustained recession, many more recently developing economies suffered far less impact, particularly China, India and Indonesia, whose economies grew substantially during this period. Similarly, Oceania suffered minimal impact, in part due to its proximity to Asian markets.
+
+      Terminology
+Two definitions of the term "economic recession" exist: one sense referring generally to "a period of reduced economic activity"[7] and ongoing hardship; and a technical definition used in economics, which is defined operationally, specifically the contraction phase of a business cycle with two or more consecutive quarters of GDP contraction(negative GDP growth rate).The latter is typically used to influence abrupt changes in monetary policy.
+
+Under the technical definition, the recession ended in the United States in June or July 2009.[8][9][10][11]
+
+Journalist Robert Kuttner has argued that 'The Great Recession' is a misnomer.According to Kuttner, "recessions are mild dips in the business cycle that are either self-correcting or soon cured by modest fiscal or monetary stimulus. Because of the continuing deflationary trap, it would be more accurate to call this decade's stagnant economy The Lesser Depression or The Great Deflation."[12]
+
+      Overview
+The Great Recession met the IMF criteria for being a global recession only in the single calendar year 2009.[13][14] That IMF definition requires a decline in annual real world GDP per capita.Despite the fact that quarterly data are being used as recession definition criteria by all G20 members, representing 85 % of the world GDP, [15] the International Monetary Fund(IMF) has decided – in the absence of a complete data set – not to declare / measure global recessions according to quarterly GDP data.The seasonally adjusted PPP‑weighted real GDP for the G20‑zone, however, is a good indicator for the world GDP, and it was measured to have suffered a direct quarter on quarter decline during the three quarters from Q3‑2008 until Q1‑2009, which more accurately mark when the recession took place at the global level.[16]
+
+According to the U.S.National Bureau of Economic Research(the official arbiter of U.S.recessions), the recession began in December 2007 and ended in June 2009, and thus extended over eighteen months.[5][17]
+
+A number of people queuing at the door of a branch of the Northern Rock bank.
+A bank run at a branch of the Northern Rock bank in Brighton, England, on September 14, 2007, amid speculation of problems, prior to its 2008 nationalisation
+The years leading up to the crisis were characterized by an exorbitant rise in asset prices and associated boom in economic demand.[18] Further, the U.S.shadow banking system(i.e., non - depository financial institutions such as investment banks) had grown to rival the depository system yet was not subject to the same regulatory oversight, making it vulnerable to a bank run.[19]
+
+      U.S.mortgage - backed securities, which had risks that were hard to assess, were marketed around the world, as they offered higher yields than U.S.government bonds.Many of these securities were backed by subprime mortgages, which collapsed in value when the U.S.housing bubble burst during 2006 and homeowners began to default on their mortgage payments in large numbers starting in 2007.[20]
+
+The emergence of subprime loan losses in 2007 began the crisis and exposed other risky loans and over - inflated asset prices.With loan losses mounting and the fall of Lehman Brothers on September 15, 2008, a major panic broke out on the inter - bank loan market.There was the equivalent of a bank run on the shadow banking system, resulting in many large and well established investment banks and commercial banks in the United States and Europe suffering huge losses and even facing bankruptcy, resulting in massive public financial assistance(government bailouts).[21]
+
+The global recession that followed resulted in a sharp drop in international trade, rising unemployment and slumping commodity prices.[22] Several economists predicted that recovery might not appear until 2011 and that the recession would be the worst since the Great Depression of the 1930s.[23][24] Economist Paul Krugman once commented on this as seemingly the beginning of "a second Great Depression".[25]
+            `
+              : transcript
+          );
+        }
+
+        // Ensure processing UI is cleared so we don't get stuck.
         if (isProcessing) setIsProcessing(false);
-      }
+      }, 500);
     }
-  }, [transcript, isProcessing]);
+
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [isListening, transcript, isProcessing]);
 
   const handleStart = () => {
     setIsProcessing(false);
