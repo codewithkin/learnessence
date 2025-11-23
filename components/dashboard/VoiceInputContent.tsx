@@ -11,6 +11,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
 import { toast } from 'sonner';
 import TranscriptionView from './TranscriptionView';
+import FlashCardCarousel from '@/components/flashcards/FlashCardCarousel';
 
 export default function VoiceInputContent() {
   const { isListening, transcript, startListening, stopListening } =
@@ -25,6 +26,7 @@ export default function VoiceInputContent() {
   const timerRef = useRef<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [finalTranscript, setFinalTranscript] = useState('');
+  const [generatedFlashcards, setGeneratedFlashcards] = useState<any[]>([]);
 
   useEffect(() => {
     if (isListening) {
@@ -56,7 +58,27 @@ export default function VoiceInputContent() {
       console.log('Transcript:', transcript);
       // If recording has stopped, persist the last transcript so it remains visible
       if (!isListening) {
-        setFinalTranscript(transcript);
+        setFinalTranscript(`
+          The Great Recession was a period of market decline in economies around the world that occurred from late 2007 to mid-2009,[1] overlapping with the closely related 2008 financial crisis. The scale and timing of the recession varied from country to country (see map).[2][3] At the time, the International Monetary Fund (IMF) concluded that it was the most severe economic and financial meltdown since the Great Depression.
+
+The causes of the Great Recession include a combination of vulnerabilities that developed in the financial system, along with a series of triggering events that began with the bursting of the United States housing bubble in 2005–2012. When housing prices fell and homeowners began to abandon their mortgages, the value of mortgage-backed securities held by investment banks declined in 2007–2008, causing several to collapse or be bailed out in September 2008. This 2007–2008 phase was called the subprime mortgage crisis.
+
+The combination of banks being unable to provide funds to businesses and homeowners paying down debt rather than borrowing and spending resulted in the Great Recession. The recession officially began in the U.S. in December 2007 and lasted until June 2009, thus extending over 19 months.[4][5] As with most other recessions, it appears that no known formal theoretical or empirical model was able to accurately predict the advance of this recession, except for minor signals in the sudden rise of forecast probabilities, which were still well under 50%.[6]
+
+The recession was not felt equally around the world; whereas most of the world's developed economies, particularly in North America, South America and Europe, fell into a severe, sustained recession, many more recently developing economies suffered far less impact, particularly China, India and Indonesia, whose economies grew substantially during this period. Similarly, Oceania suffered minimal impact, in part due to its proximity to Asian markets.
+
+Terminology
+Two definitions of the term "economic recession" exist: one sense referring generally to "a period of reduced economic activity"[7] and ongoing hardship; and a technical definition used in economics, which is defined operationally, specifically the contraction phase of a business cycle with two or more consecutive quarters of GDP contraction (negative GDP growth rate). The latter is typically used to influence abrupt changes in monetary policy.
+
+Under the technical definition, the recession ended in the United States in June or July 2009.[8][9][10][11]
+
+Journalist Robert Kuttner has argued that 'The Great Recession' is a misnomer. According to Kuttner, "recessions are mild dips in the business cycle that are either self-correcting or soon cured by modest fiscal or monetary stimulus. Because of the continuing deflationary trap, it would be more accurate to call this decade's stagnant economy The Lesser Depression or The Great Deflation."[12]
+
+Overview
+The Great Recession met the IMF criteria for being a global recession only in the single calendar year 2009.[13][14] That IMF definition requires a decline in annual real world GDP per capita. Despite the fact that quarterly data are being used as recession definition criteria by all G20 members, representing 85% of the world GDP,[15] the International Monetary Fund (IMF) has decided – in the absence of a complete data set – not to declare/measure global recessions according to quarterly GDP data. The seasonally adjusted PPP‑weighted real GDP for the G20‑zone, however, is a good indicator for the world GDP, and it was measured to have suffered a direct quarter on quarter decline during the three quarters from Q3‑2008 until Q1‑2009, which more accurately mark when the recession took place at the global level.[16]
+
+According to the U.S. National Bureau of Economic Research (the official arbiter of U.S. recessions), the recession began in December 2007 and ended in June 2009, and thus extended over eighteen months.[5][17]
+          `);
         if (isProcessing) setIsProcessing(false);
       }
     }
@@ -85,9 +107,13 @@ export default function VoiceInputContent() {
   const queryClient = useQueryClient();
   const flashcardsMutation = useMutation<any, any, { text: string }>({
     mutationFn: (payload) => api.post('/api/flashcards', payload),
-    onSuccess: () => {
+    onSuccess: (response) => {
+      // Store the generated flashcards from the response
+      if (response.data && Array.isArray(response.data)) {
+        setGeneratedFlashcards(response.data);
+      }
       toast.success('Flashcards generated');
-      setTimeout(() => router.push('/dashboard/flashcards'), 900);
+      // Don't redirect immediately - user can view carousel first
     },
     onError: (err) => {
       console.error(err);
@@ -116,12 +142,6 @@ export default function VoiceInputContent() {
       title: `Voice Note - ${new Date().toLocaleDateString()}`,
       content: finalTranscript,
     });
-  };
-
-  const newRecording = () => {
-    setFinalTranscript('');
-    setRecordingDuration(0);
-    setIsProcessing(false);
   };
 
   const formatDuration = (seconds: number) => {
@@ -274,8 +294,8 @@ export default function VoiceInputContent() {
             className="space-y-6 mt-4"
           >
             <div className="md:flex md:items-start md:gap-6">
-              {/* Right: transcription complete card */}
-              <div className="md:w-1/2 mt-6 md:mt-0">
+              {/* Action buttons card */}
+              <div className="w-full">
                 <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
                   <div className="flex items-start gap-4 mb-6">
                     <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
@@ -346,6 +366,18 @@ export default function VoiceInputContent() {
                 </Card>
               </div>
             </div>
+
+            {/* Show flashcard carousel after generation */}
+            {generatedFlashcards.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="mt-8"
+              >
+                <FlashCardCarousel cards={generatedFlashcards} title="Your Generated Flashcards" />
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
