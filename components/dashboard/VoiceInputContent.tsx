@@ -370,12 +370,22 @@ According to the U.S. National Bureau of Economic Research (the official arbiter
             {/* Show flashcard carousel after generation */}
             {generatedFlashcards.length > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-                className="mt-8"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md"
+                onClick={() => setGeneratedFlashcards([])}
               >
-                <FlashCardCarousel cards={generatedFlashcards} title="Your Generated Flashcards" />
+                <div
+                  className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <FlashCardCarousel
+                    cards={generatedFlashcards}
+                    title="Your Generated Flashcards"
+                  />
+                </div>
               </motion.div>
             )}
           </motion.div>
