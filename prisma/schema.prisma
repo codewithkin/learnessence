@@ -158,8 +158,8 @@ model Flashcard {
   question  String
   answer    String
 
-  setId     String
-  set       FlashcardSet  @relation(fields: [setId], references: [id])
+  setId     String?
+  set       FlashcardSet?  @relation(fields: [setId], references: [id])
 
   createdAt DateTime       @default(now())
 }
