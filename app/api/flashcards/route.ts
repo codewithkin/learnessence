@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
+import { mastra } from '@/mastra';
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,49 +71,51 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { text, title, noteId } = body as { text?: string; title?: string; noteId?: string };
+    const { text } = body as { text?: string };
+
+    // Log the incoming transcription for debugging / verification
+    console.log('Received transcription in /api/flashcards:', text);
 
     if (!text) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
     }
 
-    // If noteId provided, ensure ownership
-    if (noteId) {
-      const note = await prisma.note.findUnique({ where: { id: noteId } });
-      if (!note || note.userId !== session.user.id) {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-      }
-    }
+    // Get the flashcardsAgent
+    const flashcardsAgent = mastra.getAgent('flashcardsAgent');
 
-    // Naive flashcard generation: split into sentences
-    const sentences = text
-      .split(/(?<=[.!?])\s+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    // get the generated flashcards and title from the mastra agent
+    // Data will be in the form { title: "Title here", flashCards: [{ question: "...", answer: "..." }] }
+    const agentResponse = await flashcardsAgent.generate(
+      `Generate flashcards for the following text:\n\n${text}`
+    );
 
-    const cards = sentences
-      .map((s) => {
-        const front = s.length > 120 ? s.slice(0, 117) + '...' : s;
-        const back = s; // simple echo back
-        return { front, back };
-      })
-      .slice(0, 50); // limit to 50 cards
+    console.log('Agent response: ', agentResponse.text);
 
-    const setTitle = title || `Flashcards - ${new Date().toLocaleDateString()}`;
+    // Parse the JSON response from the agent
+    const parsedResponse = JSON.parse(agentResponse.text);
 
-    const created = await prisma.flashcardSet.create({
+    // Create a flashcard set
+    const flashcardSet = await prisma.flashcardSet.create({
       data: {
-        title: setTitle,
-        userId: session.user.id,
-        noteId: noteId || null,
-        flashcards: {
-          create: cards,
+        title: parsedResponse.title || '',
+        user: {
+          connect: {
+            id: session.user.id,
+          },
         },
       },
-      include: { flashcards: true },
     });
 
-    return NextResponse.json(created, { status: 201 });
+    // Create the flashcards
+    const flashCards = await prisma.flashcard.createMany({
+      data: parsedResponse.flashCards.map((card: any) => ({
+        question: card.question,
+        answer: card.answer,
+        setId: flashcardSet.id,
+      })),
+    });
+
+    return NextResponse.json(flashCards);
   } catch (error) {
     console.error('Error creating flashcards:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
