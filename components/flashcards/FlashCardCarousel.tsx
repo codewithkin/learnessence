@@ -85,11 +85,13 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
               dragElastic={0.7}
               onDragEnd={handleDragEnd}
               style={{ x, rotate, opacity }}
-              className="absolute inset-0 flex items-center justify-center pointer-events-auto"
+              className="w-full h-full flex items-center justify-center pointer-events-auto"
             >
               <FlashCard
                 question={cards[currentIndex].question}
                 answer={cards[currentIndex].answer}
+                index={currentIndex}
+                variant="carousel"
               />
             </motion.div>
           </AnimatePresence>

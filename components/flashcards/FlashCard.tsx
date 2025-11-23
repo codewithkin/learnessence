@@ -20,9 +20,15 @@ interface FlashCardProps {
   question: string;
   answer: string;
   index?: number;
+  variant?: 'default' | 'carousel';
 }
 
-export default function FlashCard({ question, answer, index = 0 }: FlashCardProps) {
+export default function FlashCard({
+  question,
+  answer,
+  index = 0,
+  variant = 'default',
+}: FlashCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
   const { frontGradient, backGradient, Icon } = useMemo(() => {
@@ -75,12 +81,16 @@ export default function FlashCard({ question, answer, index = 0 }: FlashCardProp
 
   return (
     <motion.div
-      className="relative w-48 sm:w-64 md:w-72 lg:w-80 xl:w-96 cursor-pointer perspective-1000 max-h-[85vh]"
+      className={`relative ${
+        variant === 'carousel'
+          ? 'w-40 sm:w-48 md:w-56 lg:w-64 xl:w-72'
+          : 'w-48 sm:w-64 md:w-72 lg:w-80 xl:w-96'
+      } cursor-pointer perspective-1000 max-h-full`}
       onClick={() => setIsFlipped((s) => !s)}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.06 }}
-      style={{ aspectRatio: '1 / 2' }}
+      style={{ aspectRatio: '3 / 2', maxHeight: '100%' }}
     >
       <motion.div
         className="relative w-full h-full"
