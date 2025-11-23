@@ -274,42 +274,6 @@ export default function VoiceInputContent() {
             className="space-y-6 mt-4"
           >
             <div className="md:flex md:items-start md:gap-6">
-              {/* Left: recording summary card (keeps visual context of the recording) */}
-              <div className="md:w-1/2">
-                <Card className="p-8 rounded-2xl shadow-sm border border-gray-200 h-full">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
-                      <Mic className="w-6 h-6 text-red-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">Recording</h3>
-                      <p className="text-sm text-gray-600">
-                        Duration: {formatDuration(recordingDuration)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 mb-6">
-                    This shows the recording summary for the transcription you just completed.
-                  </p>
-
-                  <div className="flex items-center gap-3">
-                    <MotionButton
-                      onClick={newRecording}
-                      variant="outline"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="px-6 py-3 rounded-xl"
-                    >
-                      New Recording
-                    </MotionButton>
-                  </div>
-                </Card>
-              </div>
-
               {/* Right: transcription complete card */}
               <div className="md:w-1/2 mt-6 md:mt-0">
                 <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
@@ -326,12 +290,7 @@ export default function VoiceInputContent() {
                       </p>
                     </div>
                   </div>
-
-                  {/* transcript area (final transcript persisted to `finalTranscript`) */}
-                  <div className="mb-6">
-                    <TranscriptionView text={finalTranscript} />
-                  </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     {/* Flashcards button: disabled while loading */}
                     <MotionButton
                       onClick={handleGenerateFlashcards}
@@ -382,19 +341,6 @@ export default function VoiceInputContent() {
                       {!notesMutation.isPending && (
                         <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
                       )}
-                    </MotionButton>
-
-                    <MotionButton
-                      onClick={newRecording}
-                      variant="outline"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2, delay: 0.12 }}
-                      className="px-6 py-6 rounded-xl"
-                    >
-                      New Recording
                     </MotionButton>
                   </div>
                 </Card>
