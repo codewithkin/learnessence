@@ -3,7 +3,7 @@
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import FlashCard from './FlashCard';
 
@@ -70,23 +70,8 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
           </span>
         </div>
 
-        {/* Card display area with stack effect */}
-        <div className="relative h-[400px] mb-8">
-          {/* Background stacked cards for depth */}
-          {cards.slice(currentIndex + 1, currentIndex + 3).map((_, idx) => (
-            <motion.div
-              key={`stack-${currentIndex + idx + 1}`}
-              className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 border-2 border-gray-200"
-              style={{
-                zIndex: -idx - 1,
-                scale: 1 - (idx + 1) * 0.05,
-                y: (idx + 1) * 8,
-                opacity: 0.3 - idx * 0.1,
-              }}
-            />
-          ))}
-
-          {/* Current card */}
+        {/* Card display area (centered) */}
+        <div className="relative h-[400px] mb-8 flex items-center justify-center">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentIndex}
@@ -100,7 +85,7 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
               dragElastic={0.7}
               onDragEnd={handleDragEnd}
               style={{ x, rotate, opacity }}
-              className="absolute inset-0"
+              className="absolute inset-0 flex items-center justify-center pointer-events-auto"
             >
               <FlashCard
                 question={cards[currentIndex].question}
@@ -110,19 +95,8 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
           </AnimatePresence>
         </div>
 
-        {/* Navigation controls */}
-        <div className="flex items-center justify-between gap-4 mb-6">
-          <Button
-            onClick={handlePrev}
-            disabled={currentIndex === 0}
-            variant="outline"
-            size="lg"
-            className="rounded-xl"
-          >
-            <ChevronLeft className="w-5 h-5 mr-2" />
-            Previous
-          </Button>
-
+        {/* Pagination (centered) - rely on swipe gestures for navigation */}
+        <div className="flex items-center justify-center gap-2 mb-6">
           <div className="flex gap-2">
             {cards.map((_, idx) => (
               <button
@@ -137,17 +111,6 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
               />
             ))}
           </div>
-
-          <Button
-            onClick={handleNext}
-            disabled={currentIndex === cards.length - 1}
-            variant="outline"
-            size="lg"
-            className="rounded-xl"
-          >
-            Next
-            <ChevronRight className="w-5 h-5 ml-2" />
-          </Button>
         </div>
 
         {/* View all button */}
