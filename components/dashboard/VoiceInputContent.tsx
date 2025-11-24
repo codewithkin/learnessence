@@ -242,15 +242,35 @@ The global recession that followed resulted in a sharp drop in international tra
     },
   });
 
+  // Generation mutation: create a note via the notesAgent API
+  const [isGeneratingNote, setIsGeneratingNote] = useState(false);
+  const generateNotesMutation = useMutation<any, any, { text: string }>({
+    mutationFn: (payload) => api.post('/api/notes/generate', payload),
+    onMutate: () => setIsGeneratingNote(true),
+    onSuccess: (response) => {
+      const created = response?.data;
+      if (created && created.id) {
+        toast.success('Note generated');
+        // Redirect to the newly created note page
+        router.push(`/dashboard/notes/${created.id}`);
+      } else {
+        toast.success('Note generated');
+      }
+    },
+    onError: (err) => {
+      console.error('Error generating note:', err);
+      toast.error('Failed to generate note');
+    },
+    onSettled: () => setIsGeneratingNote(false),
+  });
+
   const handleGenerateFlashcards = () => {
     flashcardsMutation.mutate({ text: finalTranscript });
   };
 
   const handleGenerateNotes = () => {
-    notesMutation.mutate({
-      title: `Voice Note - ${new Date().toLocaleDateString()}`,
-      content: finalTranscript,
-    });
+    // Use the notes generation endpoint which uses the agent to produce title/content
+    generateNotesMutation.mutate({ text: finalTranscript });
   };
 
   const formatDuration = (seconds: number) => {
@@ -258,6 +278,9 @@ The global recession that followed resulted in a sharp drop in international tra
     const secs = seconds % 60;
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // If either generation mutation is running, treat as busy to prevent parallel requests
+  const isAnyGenerating = flashcardsMutation.isPending || generateNotesMutation.isPending;
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -430,7 +453,7 @@ The global recession that followed resulted in a sharp drop in international tra
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: 0.04 }}
                       className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                      disabled={flashcardsMutation.isPending}
+                      disabled={isAnyGenerating}
                     >
                       {flashcardsMutation.isPending ? (
                         <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
@@ -441,24 +464,22 @@ The global recession that followed resulted in a sharp drop in international tra
                         <div className="font-medium text-gray-900">Generate Flashcards</div>
                         <div className="text-xs text-gray-600">Create study flashcards</div>
                       </div>
-                      {!flashcardsMutation.isPending && (
-                        <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
-                      )}
+                      {!isAnyGenerating && <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />}
                     </MotionButton>
 
-                    {/* Notes button */}
+                    {/* Notes button (generate via agent) */}
                     <MotionButton
                       onClick={handleGenerateNotes}
-                      variant={notesMutation.isError ? 'destructive' : 'outline'}
+                      variant={generateNotesMutation.isError ? 'destructive' : 'outline'}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.2, delay: 0.08 }}
                       className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                      disabled={notesMutation.isPending}
+                      disabled={isAnyGenerating}
                     >
-                      {notesMutation.isPending ? (
+                      {generateNotesMutation.isPending ? (
                         <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
                       ) : (
                         <FileText className="w-5 h-5 mr-3 text-indigo-600" />
@@ -467,9 +488,7 @@ The global recession that followed resulted in a sharp drop in international tra
                         <div className="font-medium text-gray-900">Generate Notes</div>
                         <div className="text-xs text-gray-600">Save transcription as a note</div>
                       </div>
-                      {!notesMutation.isPending && (
-                        <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
-                      )}
+                      {!isAnyGenerating && <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />}
                     </MotionButton>
                   </div>
                 </Card>
