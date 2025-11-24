@@ -487,7 +487,7 @@ The global recession that followed resulted in a sharp drop in international tra
                 onClick={() => setGeneratedFlashcards([])}
               >
                 <div
-                  className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6"
+                  className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 hide-scrollbar"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <FlashCardCarousel cards={generatedFlashcards} />

@@ -59,10 +59,11 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       className="w-full"
+      style={{ overflow: 'hidden' }}
     >
       {title && <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">{title}</h3>}
 
-      <div className="relative w-full max-w-2xl mx-auto">
+      <div className="relative w-full max-w-2xl mx-auto overflow-hidden">
         {/* Card counter */}
         <div className="text-center mb-4">
           <span className="text-sm font-medium text-gray-600">
@@ -71,7 +72,7 @@ export default function FlashCardCarousel({ cards, title }: FlashCardCarouselPro
         </div>
 
         {/* Card display area (centered) */}
-        <div className="relative h-[400px] mb-8 flex items-center justify-center">
+        <div className="relative h-[400px] mb-8 flex items-center justify-center overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentIndex}
