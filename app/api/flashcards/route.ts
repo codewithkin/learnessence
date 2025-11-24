@@ -91,8 +91,48 @@ export async function POST(request: NextRequest) {
 
     console.log('Agent response: ', agentResponse.text);
 
-    // Parse the JSON response from the agent
-    const parsedResponse = JSON.parse(agentResponse.text);
+    // Parse the JSON response from the agent robustly.
+    // The agent may return the JSON wrapped in markdown code fences (```json ... ```)
+    // or include stray text. Try several strategies to recover the JSON.
+    const safeParse = (text: string) => {
+      // 1) direct parse
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        // 2) strip markdown code fences like ```json\n...\n``` and parse inner
+        const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+        if (fenceMatch && fenceMatch[1]) {
+          try {
+            return JSON.parse(fenceMatch[1]);
+          } catch (e2) {
+            // fallthrough
+          }
+        }
+
+        // 3) try to extract the first { ... } block
+        const firstBrace = text.indexOf('{');
+        const lastBrace = text.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const sub = text.slice(firstBrace, lastBrace + 1);
+          try {
+            return JSON.parse(sub);
+          } catch (e3) {
+            // fallthrough
+          }
+        }
+
+        // If all fails, throw original error so we can return a helpful response.
+        throw new Error('Failed to parse agent JSON response');
+      }
+    };
+
+    let parsedResponse;
+    try {
+      parsedResponse = safeParse(agentResponse.text);
+    } catch (err) {
+      console.error('Error parsing agent response:', err, '\nRaw response:', agentResponse.text);
+      return NextResponse.json({ error: 'Invalid agent response format' }, { status: 502 });
+    }
 
     // Create a flashcard set
     const flashcardSet = await prisma.flashcardSet.create({

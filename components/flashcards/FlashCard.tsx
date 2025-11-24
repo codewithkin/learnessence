@@ -81,11 +81,7 @@ export default function FlashCard({
 
   return (
     <motion.div
-      className={`relative ${
-        variant === 'carousel'
-          ? 'w-40 sm:w-48 md:w-56 lg:w-64 xl:w-72'
-          : 'w-48 sm:w-64 md:w-72 lg:w-80 xl:w-96'
-      } cursor-pointer perspective-1000 max-h-full`}
+      className={`relative w-48 sm:w-64 md:w-72 lg:w-80 xl:w-96 cursor-pointer perspective-1000 max-h-full`}
       onClick={() => setIsFlipped((s) => !s)}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
