@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNextjsAudioToTextRecognition } from 'nextjs-audio-to-text-recognition';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Mic, Square, Loader2, FileText, Sparkles, ArrowRight } from 'lucide-react';
+import { Mic, Square, Loader2, FileText, Sparkles, ArrowRight, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
@@ -487,9 +487,17 @@ The global recession that followed resulted in a sharp drop in international tra
                 onClick={() => setGeneratedFlashcards([])}
               >
                 <div
-                  className="w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 hide-scrollbar"
+                  className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 hide-scrollbar"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <button
+                    aria-label="Close flashcards"
+                    onClick={() => setGeneratedFlashcards([])}
+                    className="absolute top-4 left-4 z-50 bg-white/90 hover:bg-white text-gray-700 rounded-full p-2 shadow-md"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+
                   <FlashCardCarousel cards={generatedFlashcards} />
                 </div>
               </motion.div>
