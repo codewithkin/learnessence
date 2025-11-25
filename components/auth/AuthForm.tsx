@@ -5,6 +5,7 @@ import { signIn } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import getErrorMessage from '@/lib/getErrorMessage';
 import { Loader2, Lightbulb } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
@@ -38,8 +39,9 @@ export default function AuthForm() {
         setEmail('');
         setMagicLinkSent(true);
       }
-    } catch {
-      toast.error('An error occurred', {
+    } catch (err: any) {
+      console.error('Magic link error:', err);
+      toast.error(getErrorMessage(err) || 'An error occurred', {
         description: 'Something went wrong. Please try again.',
       });
     } finally {
@@ -55,8 +57,11 @@ export default function AuthForm() {
         callbackURL: '/dashboard',
         newUserCallbackURL: '/onboarding',
       });
-    } catch {
-      toast.error('Google sign-in failed', { description: 'Please try again.' });
+    } catch (err: any) {
+      console.error('Google sign-in error:', err);
+      toast.error(getErrorMessage(err) || 'Google sign-in failed', {
+        description: 'Please try again.',
+      });
       setIsGoogleLoading(false);
     }
   };

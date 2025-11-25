@@ -10,6 +10,7 @@ import EditableTitle from './EditableTitle';
 import RichTextEditor from './RichTextEditor';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import getErrorMessage from '@/lib/getErrorMessage';
 import useNoteDraftStore from '@/stores/useNoteDraftStore';
 
 type NoteEditorProps = {
@@ -121,7 +122,8 @@ export default function NoteEditor({
     },
     onError: (err, vars, context: any) => {
       if (context?.previous) queryClient.setQueryData(['notes'], context.previous);
-      toast.error('Failed to save note');
+      console.error('Error saving note:', err);
+      toast.error(getErrorMessage(err) || 'Failed to save note');
     },
     onSuccess(data) {
       try {

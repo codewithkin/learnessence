@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import getErrorMessage from '@/lib/getErrorMessage';
 import React from 'react';
 
 type ShareButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -29,7 +30,7 @@ export default function ShareButton({ url, ...props }: ShareButtonProps) {
       toast.success('Link copied to clipboard');
     } catch (err) {
       console.error('Share failed', err);
-      toast.error('Unable to share');
+      toast.error(getErrorMessage(err) || 'Unable to share');
     }
   };
 
