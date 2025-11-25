@@ -14,10 +14,10 @@ export const flashcardsAgent = new Agent({
   model: 'openai/gpt-4o-mini',
   inputProcessors: [
     // 0. Educational content validation: Ensure content is educational
-    new EducationalContentValidator({
-      model: { id: 'openai/gpt-4o-mini' },
-      strategy: 'block',
-    }),
+    // new EducationalContentValidator({
+    //   model: { id: 'openai/gpt-4o-mini' },
+    //   strategy: 'block',
+    // }),
     // 1. Normalization: Standardize input format
     new UnicodeNormalizer({
       stripControlChars: true,

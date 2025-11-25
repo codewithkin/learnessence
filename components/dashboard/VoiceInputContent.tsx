@@ -54,41 +54,6 @@ export default function VoiceInputContent() {
     };
   }, [isListening]);
 
-  // When recording stops, finalize transcript and clear processing state.
-  useEffect(() => {
-    let t: number | undefined;
-
-    if (!isListening) {
-      // Allow a short grace period for any final interim results.
-      t = window.setTimeout(() => {
-        // Only use transcript here to update finalTranscript
-        if (transcript) {
-          console.log('Transcript (final):', transcript);
-          setFinalTranscript(transcript);
-
-          // AFTER finalTranscript is set, validate length and show toast if needed
-          if (transcript.length > 0 && transcript.length < 200) {
-            toast.error(
-              `Transcript must be at least 200 characters (currently ${transcript.length}).`,
-              {
-                duration: 5000,
-              }
-            );
-          }
-        } else {
-          setFinalTranscript('');
-        }
-
-        // Ensure processing UI is cleared
-        if (isProcessing) setIsProcessing(false);
-      }, 500);
-    }
-
-    return () => {
-      if (t) clearTimeout(t);
-    };
-  }, [isListening, transcript, isProcessing]);
-
   const handleStart = () => {
     setIsProcessing(false);
     // If there's a previous transcript, reset it when starting a new recording
@@ -100,9 +65,35 @@ export default function VoiceInputContent() {
   };
 
   const handleStop = () => {
+    // Capture transcript value immediately before stopping
+    const currentTranscript = transcript;
+
     setIsProcessing(true);
     stopListening();
-    // The useEffect above will handle setting finalTranscript and clearing isProcessing
+
+    // Allow a short grace period for any final interim results
+    setTimeout(() => {
+      // Use the captured transcript value
+      if (currentTranscript) {
+        console.log('Transcript (final):', currentTranscript);
+        setFinalTranscript(currentTranscript);
+
+        // AFTER finalTranscript is set, validate length and show toast if needed
+        if (currentTranscript.length > 0 && currentTranscript.length < 200) {
+          toast.error(
+            `Transcript must be at least 200 characters (currently ${currentTranscript.length}).`,
+            {
+              duration: 5000,
+            }
+          );
+        }
+      } else {
+        setFinalTranscript('');
+      }
+
+      // Clear processing UI
+      setIsProcessing(false);
+    }, 500);
   };
 
   const router = useRouter();
@@ -328,7 +319,7 @@ export default function VoiceInputContent() {
         )}
 
         {/* Transcribed State - Show Actions and recording summary side-by-side on md+ */}
-        {!isListening && finalTranscript && (
+        {!isListening && finalTranscript && finalTranscript.length >= 200 && (
           <motion.div
             key="transcribed"
             initial={{ opacity: 0, y: 20 }}
