@@ -16,13 +16,13 @@ export const flashcardsAgent = new Agent({
       collapseWhitespace: true,
     }),
     new PromptInjectionDetector({
-      model: { provider: 'openai', name: 'gpt-4o-mini' },
+      model: { id: 'openai/gpt-4o-mini' },
       threshold: 0.8,
       strategy: 'block',
       detectionTypes: ['injection', 'jailbreak', 'system-override'],
     }),
     new ModerationProcessor({
-      model: { provider: 'openai', name: 'gpt-4o-mini' },
+      model: { id: 'openai/gpt-4o-mini' },
       categories: ['hate', 'harassment', 'violence', 'sexual'],
       threshold: 0.7,
       strategy: 'block',
