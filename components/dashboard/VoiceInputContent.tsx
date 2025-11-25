@@ -6,6 +6,7 @@ import { useNextjsAudioToTextRecognition } from 'nextjs-audio-to-text-recognitio
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Mic, Square, Loader2, FileText, Sparkles, ArrowRight, X } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
@@ -282,6 +283,10 @@ The global recession that followed resulted in a sharp drop in international tra
   // If either generation mutation is running, treat as busy to prevent parallel requests
   const isAnyGenerating = flashcardsMutation.isPending || generateNotesMutation.isPending;
 
+  // Validation: Check if transcript is long enough (minimum 200 characters)
+  const isTranscriptTooShort = finalTranscript.length < 200;
+  const canGenerate = !isTranscriptTooShort && !isAnyGenerating;
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-8">
@@ -443,53 +448,91 @@ The global recession that followed resulted in a sharp drop in international tra
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
-                    {/* Flashcards button: disabled while loading */}
-                    <MotionButton
-                      onClick={handleGenerateFlashcards}
-                      variant={flashcardsMutation.isError ? 'destructive' : 'outline'}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2, delay: 0.04 }}
-                      className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                      disabled={isAnyGenerating}
-                    >
-                      {flashcardsMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
-                      ) : (
-                        <Sparkles className="w-5 h-5 mr-3 text-amber-500" />
-                      )}
-                      <div className="text-left">
-                        <div className="font-medium text-gray-900">Generate Flashcards</div>
-                        <div className="text-xs text-gray-600">Create study flashcards</div>
-                      </div>
-                      {!isAnyGenerating && <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />}
-                    </MotionButton>
+                    {/* Flashcards button: disabled while loading or transcript too short */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex-1">
+                            <MotionButton
+                              onClick={handleGenerateFlashcards}
+                              variant={flashcardsMutation.isError ? 'destructive' : 'outline'}
+                              whileHover={{ scale: canGenerate ? 1.02 : 1 }}
+                              whileTap={{ scale: canGenerate ? 0.98 : 1 }}
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: 0.04 }}
+                              className="w-full justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
+                              disabled={!canGenerate}
+                            >
+                              {flashcardsMutation.isPending ? (
+                                <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
+                              ) : (
+                                <Sparkles className="w-5 h-5 mr-3 text-amber-500" />
+                              )}
+                              <div className="text-left">
+                                <div className="font-medium text-gray-900">Generate Flashcards</div>
+                                <div className="text-xs text-gray-600">Create study flashcards</div>
+                              </div>
+                              {canGenerate && (
+                                <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
+                              )}
+                            </MotionButton>
+                          </div>
+                        </TooltipTrigger>
+                        {isTranscriptTooShort && (
+                          <TooltipContent>
+                            <p>
+                              Transcript must be at least 200 characters ({finalTranscript.length}
+                              /200)
+                            </p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
 
                     {/* Notes button (generate via agent) */}
-                    <MotionButton
-                      onClick={handleGenerateNotes}
-                      variant={generateNotesMutation.isError ? 'destructive' : 'outline'}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.2, delay: 0.08 }}
-                      className="justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200 flex-1"
-                      disabled={isAnyGenerating}
-                    >
-                      {generateNotesMutation.isPending ? (
-                        <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
-                      ) : (
-                        <FileText className="w-5 h-5 mr-3 text-indigo-600" />
-                      )}
-                      <div className="text-left">
-                        <div className="font-medium text-gray-900">Generate Notes</div>
-                        <div className="text-xs text-gray-600">Save transcription as a note</div>
-                      </div>
-                      {!isAnyGenerating && <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />}
-                    </MotionButton>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex-1">
+                            <MotionButton
+                              onClick={handleGenerateNotes}
+                              variant={generateNotesMutation.isError ? 'destructive' : 'outline'}
+                              whileHover={{ scale: canGenerate ? 1.02 : 1 }}
+                              whileTap={{ scale: canGenerate ? 0.98 : 1 }}
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.2, delay: 0.08 }}
+                              className="w-full justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
+                              disabled={!canGenerate}
+                            >
+                              {generateNotesMutation.isPending ? (
+                                <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
+                              ) : (
+                                <FileText className="w-5 h-5 mr-3 text-indigo-600" />
+                              )}
+                              <div className="text-left">
+                                <div className="font-medium text-gray-900">Generate Notes</div>
+                                <div className="text-xs text-gray-600">
+                                  Save transcription as a note
+                                </div>
+                              </div>
+                              {canGenerate && (
+                                <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
+                              )}
+                            </MotionButton>
+                          </div>
+                        </TooltipTrigger>
+                        {isTranscriptTooShort && (
+                          <TooltipContent>
+                            <p>
+                              Transcript must be at least 200 characters ({finalTranscript.length}
+                              /200)
+                            </p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </Card>
               </div>
