@@ -61,15 +61,25 @@ export default function VoiceInputContent() {
     if (!isListening) {
       // Allow a short grace period for any final interim results.
       t = window.setTimeout(() => {
+        // Only use transcript here to update finalTranscript
         if (transcript) {
           console.log('Transcript (final):', transcript);
           setFinalTranscript(transcript);
+
+          // AFTER finalTranscript is set, validate length and show toast if needed
+          if (transcript.length > 0 && transcript.length < 200) {
+            toast.error(
+              `Transcript must be at least 200 characters (currently ${transcript.length}).`,
+              {
+                duration: 5000,
+              }
+            );
+          }
         } else {
-          // No transcript arrived — clear any final transcript
           setFinalTranscript('');
         }
 
-        // Ensure processing UI is cleared so we don't get stuck.
+        // Ensure processing UI is cleared
         if (isProcessing) setIsProcessing(false);
       }, 500);
     }
@@ -90,25 +100,9 @@ export default function VoiceInputContent() {
   };
 
   const handleStop = () => {
-    // Show processing UI until transcript updates
     setIsProcessing(true);
     stopListening();
-
-    // Check transcript length after stopping and show toast if too short
-    setTimeout(() => {
-      const currentTranscript = transcript || '';
-      setFinalTranscript(currentTranscript);
-      setIsProcessing(false);
-
-      if (currentTranscript.length > 0 && currentTranscript.length < 200) {
-        toast.error(
-          `Transcript must be at least 200 characters (currently ${currentTranscript.length}).`,
-          {
-            duration: 5000,
-          }
-        );
-      }
-    }, 600);
+    // The useEffect above will handle setting finalTranscript and clearing isProcessing
   };
 
   const router = useRouter();
@@ -334,7 +328,7 @@ export default function VoiceInputContent() {
         )}
 
         {/* Transcribed State - Show Actions and recording summary side-by-side on md+ */}
-        {!isListening && finalTranscript && finalTranscript.length >= 200 && (
+        {!isListening && finalTranscript && (
           <motion.div
             key="transcribed"
             initial={{ opacity: 0, y: 20 }}
