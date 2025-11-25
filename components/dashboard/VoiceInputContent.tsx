@@ -13,6 +13,7 @@ import api from '@/lib/axiosClient';
 import { toast } from 'sonner';
 import TranscriptionView from './TranscriptionView';
 import FlashCardCarousel from '@/components/flashcards/FlashCardCarousel';
+import getErrorMessage from '@/lib/getErrorMessage';
 
 export default function VoiceInputContent() {
   const { isListening, transcript, startListening, stopListening } =
@@ -92,6 +93,22 @@ export default function VoiceInputContent() {
     // Show processing UI until transcript updates
     setIsProcessing(true);
     stopListening();
+
+    // Check transcript length after stopping and show toast if too short
+    setTimeout(() => {
+      const currentTranscript = transcript || '';
+      setFinalTranscript(currentTranscript);
+      setIsProcessing(false);
+
+      if (currentTranscript.length > 0 && currentTranscript.length < 200) {
+        toast.error(
+          `Transcript must be at least 200 characters (currently ${currentTranscript.length}).`,
+          {
+            duration: 5000,
+          }
+        );
+      }
+    }, 600);
   };
 
   const router = useRouter();
@@ -111,7 +128,7 @@ export default function VoiceInputContent() {
     },
     onError: (err) => {
       console.error(err);
-      toast.error('Failed to generate flashcards');
+      toast.error(getErrorMessage(err) || 'Failed to generate flashcards');
     },
   });
 
@@ -123,7 +140,7 @@ export default function VoiceInputContent() {
     },
     onError: (err) => {
       console.error(err);
-      toast.error('Failed to save note');
+      toast.error(getErrorMessage(err) || 'Failed to save note');
     },
   });
 
@@ -144,16 +161,34 @@ export default function VoiceInputContent() {
     },
     onError: (err) => {
       console.error('Error generating note:', err);
-      toast.error('Failed to generate note');
+      toast.error(getErrorMessage(err) || 'Failed to generate note');
     },
     onSettled: () => setIsGeneratingNote(false),
   });
 
   const handleGenerateFlashcards = () => {
+    if (isTranscriptTooShort) {
+      toast.error(
+        `Transcript must be at least 200 characters (currently ${finalTranscript.length}).`,
+        {
+          duration: 5000,
+        }
+      );
+      return;
+    }
     flashcardsMutation.mutate({ text: finalTranscript });
   };
 
   const handleGenerateNotes = () => {
+    if (isTranscriptTooShort) {
+      toast.error(
+        `Transcript must be at least 200 characters (currently ${finalTranscript.length}).`,
+        {
+          duration: 5000,
+        }
+      );
+      return;
+    }
     // Use the notes generation endpoint which uses the agent to produce title/content
     generateNotesMutation.mutate({ text: finalTranscript });
   };
@@ -169,7 +204,6 @@ export default function VoiceInputContent() {
 
   // Validation: Check if transcript is long enough (minimum 200 characters)
   const isTranscriptTooShort = finalTranscript.length < 200;
-  const canGenerate = !isTranscriptTooShort && !isAnyGenerating;
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -180,7 +214,7 @@ export default function VoiceInputContent() {
 
       <AnimatePresence mode="wait">
         {/* Idle State - Before Recording */}
-        {!isListening && !transcript && !isProcessing && (
+        {!isListening && !isProcessing && !finalTranscript && (
           <motion.div
             key="idle"
             initial={{ opacity: 0, y: 20 }}
@@ -213,13 +247,8 @@ export default function VoiceInputContent() {
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 text-lg rounded-xl"
                 >
                   <Mic className="w-5 h-5 mr-2" />
-                  {finalTranscript ? 'New Recording' : 'Start Recording'}
+                  Start Recording
                 </MotionButton>
-                {/* upload UI removed per request */}
-                {/* show last transcript (if any) inside the card */}
-                {finalTranscript ? (
-                  <TranscriptionView text={finalTranscript} className="mt-6" />
-                ) : null}
               </div>
             </Card>
           </motion.div>
@@ -305,7 +334,7 @@ export default function VoiceInputContent() {
         )}
 
         {/* Transcribed State - Show Actions and recording summary side-by-side on md+ */}
-        {!isListening && finalTranscript && (
+        {!isListening && finalTranscript && finalTranscript.length >= 200 && (
           <motion.div
             key="transcribed"
             initial={{ opacity: 0, y: 20 }}
@@ -340,13 +369,13 @@ export default function VoiceInputContent() {
                             <MotionButton
                               onClick={handleGenerateFlashcards}
                               variant={flashcardsMutation.isError ? 'destructive' : 'outline'}
-                              whileHover={{ scale: canGenerate ? 1.02 : 1 }}
-                              whileTap={{ scale: canGenerate ? 0.98 : 1 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               initial={{ opacity: 0, y: 6 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.2, delay: 0.04 }}
                               className="w-full justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
-                              disabled={!canGenerate}
+                              disabled={flashcardsMutation.isPending}
                             >
                               {flashcardsMutation.isPending ? (
                                 <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
@@ -357,7 +386,7 @@ export default function VoiceInputContent() {
                                 <div className="font-medium text-gray-900">Generate Flashcards</div>
                                 <div className="text-xs text-gray-600">Create study flashcards</div>
                               </div>
-                              {canGenerate && (
+                              {!flashcardsMutation.isPending && (
                                 <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
                               )}
                             </MotionButton>
@@ -382,13 +411,13 @@ export default function VoiceInputContent() {
                             <MotionButton
                               onClick={handleGenerateNotes}
                               variant={generateNotesMutation.isError ? 'destructive' : 'outline'}
-                              whileHover={{ scale: canGenerate ? 1.02 : 1 }}
-                              whileTap={{ scale: canGenerate ? 0.98 : 1 }}
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
                               initial={{ opacity: 0, y: 6 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ duration: 0.2, delay: 0.08 }}
                               className="w-full justify-start h-auto py-4 px-4 rounded-xl hover:bg-indigo-50 border-gray-200"
-                              disabled={!canGenerate}
+                              disabled={generateNotesMutation.isPending}
                             >
                               {generateNotesMutation.isPending ? (
                                 <Loader2 className="w-5 h-5 mr-3 text-gray-500 animate-spin" />
@@ -401,7 +430,7 @@ export default function VoiceInputContent() {
                                   Save transcription as a note
                                 </div>
                               </div>
-                              {canGenerate && (
+                              {!generateNotesMutation.isPending && (
                                 <ArrowRight className="w-4 h-4 ml-auto text-gray-400" />
                               )}
                             </MotionButton>

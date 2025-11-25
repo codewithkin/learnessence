@@ -18,10 +18,71 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing text' }, { status: 400 });
     }
 
+    // Validate minimum length
+    if (text.length < 200) {
+      return NextResponse.json(
+        {
+          error: 'Transcript too short',
+          message: `Transcript must be at least 200 characters. Received ${text.length} characters.`,
+        },
+        { status: 400 }
+      );
+    }
+
     const notesAgent = mastra.getAgent('notesAgent');
-    const agentResponse = await notesAgent.generate(
-      `Create a concise note from the text below:\n\n${text}`
-    );
+    let agentResponse;
+    try {
+      agentResponse = await notesAgent.generate(
+        `Create a concise note from the text below:\n\n${text}`
+      );
+
+      // Check if request was blocked by processors (tripwire)
+      if (agentResponse.tripwire) {
+        console.error('Request blocked by processor:', agentResponse.tripwireReason);
+        return NextResponse.json(
+          {
+            error: 'Content blocked',
+            message:
+              agentResponse.tripwireReason ||
+              'Your content was flagged by our safety filters. Please ensure your input is appropriate.',
+          },
+          { status: 400 }
+        );
+      }
+    } catch (agentError: any) {
+      console.error('Agent generation error:', agentError);
+
+      // Check for specific guardrail failures
+      if (agentError.message?.includes('blocked') || agentError.message?.includes('moderation')) {
+        return NextResponse.json(
+          {
+            error: 'Content blocked',
+            message:
+              'Your content was flagged by our safety filters. Please ensure your input is appropriate.',
+          },
+          { status: 400 }
+        );
+      }
+
+      if (agentError.message?.includes('injection') || agentError.message?.includes('jailbreak')) {
+        return NextResponse.json(
+          {
+            error: 'Invalid input',
+            message:
+              'Your input contains patterns that cannot be processed. Please rephrase and try again.',
+          },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: 'Failed to generate note',
+          message: 'An error occurred while processing your request.',
+        },
+        { status: 500 }
+      );
+    }
 
     // Robust JSON parsing similar to flashcards route
     const safeParse = (text: string) => {
@@ -57,7 +118,13 @@ export async function POST(request: NextRequest) {
       parsed = safeParse(agentResponse.text);
     } catch (err) {
       console.error('Error parsing notes agent response:', err, '\nRaw:', agentResponse.text);
-      return NextResponse.json({ error: 'Invalid agent response format' }, { status: 502 });
+      return NextResponse.json(
+        {
+          error: 'Invalid response format',
+          message: 'The AI generated an invalid response. Please try again.',
+        },
+        { status: 502 }
+      );
     }
 
     // Create the note in the database
