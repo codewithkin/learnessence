@@ -60,7 +60,7 @@ export function Sidebar({ user }: SidebarProps) {
                 className={`w-full justify-start gap-3 rounded-xl transition-colors duration-150 ${
                   isActive
                     ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-600/20 dark:text-indigo-300'
-                    : 'text-muted-foreground hover:bg-blue-400 hover:text-white'
+                    : 'text-muted-foreground hover:bg-gray-100 hover:text-foreground'
                 }`}
               >
                 <Icon className="h-5 w-5" />

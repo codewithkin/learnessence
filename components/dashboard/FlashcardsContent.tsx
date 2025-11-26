@@ -4,8 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import FlashCard from '@/components/flashcards/FlashCard';
-import { ArrowLeft, Loader2, Folder, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Loader2, Folder, FolderOpen, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 
 type FlashcardSet = {
   id: string;
@@ -108,6 +114,33 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
     window.history.pushState({}, '', '/dashboard/flashcards');
   };
 
+  const handleDeleteSet = async (setId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+
+    if (
+      !confirm('Are you sure you want to delete this flashcard set? This action cannot be undone.')
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/flashcards/${setId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete flashcard set');
+      }
+
+      // Refresh the sets list
+      setSets((prevSets) => prevSets?.filter((s) => s.id !== setId) || null);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to delete flashcard set');
+    }
+  };
+
   if (selectedSet) {
     return (
       <div>
@@ -194,44 +227,54 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
             const isHovered = hoveredId === set.id;
             const FolderIcon = isHovered ? FolderOpen : Folder;
 
-            // Cycle through 4 colors
-            const colors = [
-              { base: 'text-amber-500', hover: 'text-amber-600', fill: 'fill-amber-500' },
-              { base: 'text-blue-500', hover: 'text-blue-600', fill: 'fill-blue-500' },
-              { base: 'text-purple-500', hover: 'text-purple-600', fill: 'fill-purple-500' },
-              { base: 'text-emerald-500', hover: 'text-emerald-600', fill: 'fill-emerald-500' },
-            ];
-            const colorSet = colors[index % colors.length];
-
             return (
-              <div
-                key={set.id}
-                className="group cursor-pointer"
-                onClick={() => handleViewSet(set.id)}
-                onMouseEnter={() => setHoveredId(set.id)}
-                onMouseLeave={() => setHoveredId(null)}
-              >
-                <div className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-accent/50 transition-all">
-                  <div className="relative mb-3">
-                    <FolderIcon
-                      className={`h-20 w-20 ${isHovered ? colorSet.hover : colorSet.base} ${colorSet.fill} transition-colors`}
-                      strokeWidth={1.5}
-                    />
-                    <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
-                      {set.cardCount}
+              <ContextMenu key={set.id}>
+                <ContextMenuTrigger asChild>
+                  <div
+                    className="group cursor-pointer"
+                    onClick={() => handleViewSet(set.id)}
+                    onMouseEnter={() => setHoveredId(set.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                  >
+                    <div className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-accent/50 transition-all">
+                      <div className="relative mb-3">
+                        <FolderIcon
+                          className={`h-20 w-20 ${isHovered ? 'text-blue-600' : 'text-blue-500'} fill-blue-500 transition-colors`}
+                          strokeWidth={1.5}
+                        />
+                        <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
+                          {set.cardCount}
+                        </div>
+                      </div>
+                      <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                        {set.title || 'Untitled Set'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {set.cardCount} {set.cardCount === 1 ? 'card' : 'cards'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(set.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-indigo-600 transition-colors">
-                    {set.title || 'Untitled Set'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {set.cardCount} {set.cardCount === 1 ? 'card' : 'cards'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(set.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent className="w-48">
+                  <ContextMenuItem
+                    onClick={() => handleViewSet(set.id)}
+                    className="font-semibold hover:bg-gray-100"
+                  >
+                    <FolderOpen className="w-4 h-4 mr-2" />
+                    Open
+                  </ContextMenuItem>
+                  <ContextMenuItem
+                    onClick={(e) => handleDeleteSet(set.id, e as any)}
+                    className="text-red-600 focus:text-red-600 hover:bg-red-50 font-semibold"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             );
           })}
         </div>
