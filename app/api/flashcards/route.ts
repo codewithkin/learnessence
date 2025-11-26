@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
       take: limit,
       skip: offset,
       include: {
-        flashcards: {
+        cards: {
           select: {
             id: true,
           },
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
       updatedAt: set.updatedAt,
       userId: set.userId,
       noteId: set.noteId,
-      cardCount: set.flashcards.length,
+      cardCount: set.cards.length,
     }));
 
     return NextResponse.json(flashcardSetsWithCount);
