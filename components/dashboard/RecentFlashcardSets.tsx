@@ -11,6 +11,15 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface FlashcardSet {
   id: string;
@@ -28,6 +37,8 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
   const [flashcardSets, setFlashcardSets] = useState<FlashcardSet[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [setToDelete, setSetToDelete] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -57,14 +68,15 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
       e.stopPropagation();
     }
 
-    if (
-      !confirm('Are you sure you want to delete this flashcard set? This action cannot be undone.')
-    ) {
-      return;
-    }
+    setSetToDelete(setId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!setToDelete) return;
 
     try {
-      const res = await fetch(`/api/flashcards/${setId}`, {
+      const res = await fetch(`/api/flashcards/${setToDelete}`, {
         method: 'DELETE',
       });
 
@@ -73,7 +85,9 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
       }
 
       // Refresh the sets list
-      setFlashcardSets((prevSets) => prevSets.filter((s) => s.id !== setId));
+      setFlashcardSets((prevSets) => prevSets.filter((s) => s.id !== setToDelete));
+      setDeleteDialogOpen(false);
+      setSetToDelete(null);
     } catch (err: any) {
       alert(err?.message || 'Failed to delete flashcard set');
     }
@@ -169,6 +183,25 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
           })}
         </div>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Flashcard Set</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this flashcard set? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
