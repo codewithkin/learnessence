@@ -83,7 +83,7 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {flashcardSets.map((set) => {
+          {flashcardSets.map((set, index) => {
             const isHovered = hoveredId === set.id;
             const FolderIcon = isHovered ? FolderOpen : Folder;
 
@@ -98,7 +98,7 @@ export function RecentFlashcardSets({ userId }: RecentFlashcardSetsProps) {
                 <div className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-accent/50 transition-all">
                   <div className="relative mb-3">
                     <FolderIcon
-                      className="h-16 w-16 text-amber-500 group-hover:text-amber-600 transition-colors"
+                      className={`h-16 w-16 ${isHovered ? 'text-emerald-600' : 'text-emerald-500'} fill-emerald-500 transition-colors`}
                       strokeWidth={1.5}
                     />
                     <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">

@@ -190,9 +190,18 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
 
       {!loading && sets && sets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {sets.map((set) => {
+          {sets.map((set, index) => {
             const isHovered = hoveredId === set.id;
             const FolderIcon = isHovered ? FolderOpen : Folder;
+
+            // Cycle through 4 colors
+            const colors = [
+              { base: 'text-amber-500', hover: 'text-amber-600', fill: 'fill-amber-500' },
+              { base: 'text-blue-500', hover: 'text-blue-600', fill: 'fill-blue-500' },
+              { base: 'text-purple-500', hover: 'text-purple-600', fill: 'fill-purple-500' },
+              { base: 'text-emerald-500', hover: 'text-emerald-600', fill: 'fill-emerald-500' },
+            ];
+            const colorSet = colors[index % colors.length];
 
             return (
               <div
@@ -205,7 +214,7 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
                 <div className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-accent/50 transition-all">
                   <div className="relative mb-3">
                     <FolderIcon
-                      className="h-20 w-20 text-amber-500 group-hover:text-amber-600 transition-colors"
+                      className={`h-20 w-20 ${isHovered ? colorSet.hover : colorSet.base} ${colorSet.fill} transition-colors`}
                       strokeWidth={1.5}
                     />
                     <div className="absolute -bottom-1 -right-1 bg-indigo-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
