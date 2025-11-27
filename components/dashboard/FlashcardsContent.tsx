@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import FlashCard from '@/components/flashcards/FlashCard';
 import { ArrowLeft, Loader2, Folder, FolderOpen, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
+import { toast } from 'sonner';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -85,14 +87,21 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
       await api.delete(`/api/flashcards/${setId}`);
       return setId;
     },
-    onSuccess: () => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['flashcardSets', user.id] });
+    onSuccess: (deletedSetId) => {
+      // Optimistically update cache to remove the deleted set
+      queryClient.setQueryData(['flashcardSets', user.id], (old: FlashcardSet[] | undefined) => {
+        return old?.filter((set) => set.id !== deletedSetId) || [];
+      });
+
+      // Force refetch to sync with database
+      queryClient.refetchQueries({ queryKey: ['flashcardSets', user.id] });
+
       setDeleteDialogOpen(false);
       setSetToDelete(null);
+      toast.success('Flashcard set deleted successfully');
     },
     onError: (err: any) => {
-      alert(err?.response?.data?.error || err?.message || 'Failed to delete flashcard set');
+      toast.error(err?.response?.data?.error || err?.message || 'Failed to delete flashcard set');
     },
   });
 
@@ -200,8 +209,19 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="flex flex-col items-center text-center p-4">
+              <div className="relative mb-3">
+                <Folder
+                  className="h-20 w-20 text-gray-300 fill-gray-200 animate-pulse"
+                  strokeWidth={1.5}
+                />
+              </div>
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+          ))}
         </div>
       )}
 
