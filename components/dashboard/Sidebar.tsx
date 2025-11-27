@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, FileText, Sparkles, Layers, Mic, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, Layers, Mic, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Lightbulb } from 'lucide-react';
@@ -18,7 +18,6 @@ interface SidebarProps {
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/dashboard/notes', label: 'Notes', icon: FileText },
-  { href: '/dashboard/summaries', label: 'Summaries', icon: Sparkles },
   { href: '/dashboard/flashcards', label: 'Flashcards', icon: Layers },
   { href: '/dashboard/voice', label: 'Voice Input', icon: Mic },
 ];
