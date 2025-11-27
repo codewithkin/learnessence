@@ -16,10 +16,15 @@ interface FlashCardData {
 interface FlashCardCarouselProps {
   cards: FlashCardData[];
   title?: string;
+  initialIndex?: number;
 }
 
-export default function FlashCardCarousel({ cards, title }: FlashCardCarouselProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+export default function FlashCardCarousel({
+  cards,
+  title,
+  initialIndex = 0,
+}: FlashCardCarouselProps) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const router = useRouter();
 

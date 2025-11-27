@@ -177,3 +177,8 @@
     transform: scale(var(--_s, 1)) translate(0) rotate(1turn);
   }
 }
+
+/* When viewing a flashcard set, hide the dashboard sidebar to focus content */
+.hide-dashboard-sidebar #dashboard-sidebar {
+  display: none;
+}

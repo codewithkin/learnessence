@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import FlashCard from '@/components/flashcards/FlashCard';
-import { ArrowLeft, Loader2, Folder, FolderOpen, Trash2 } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { Loader2, Folder, FolderOpen, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
 import { toast } from 'sonner';
@@ -36,21 +35,7 @@ type FlashcardSet = {
   cardCount: number;
 };
 
-type FlashcardSetWithCards = {
-  id: string;
-  title: string | null;
-  userId: string;
-  sourceNoteId: string | null;
-  cards: {
-    id: string;
-    question: string;
-    answer: string;
-    setId: string | null;
-    createdAt: string;
-  }[];
-  createdAt: string;
-  updatedAt: string;
-};
+// single-set types are handled in the dedicated page
 
 interface FlashcardsContentProps {
   user: {
@@ -61,16 +46,14 @@ interface FlashcardsContentProps {
 }
 
 export default function FlashcardsContent({ user }: FlashcardsContentProps) {
-  const searchParams = useSearchParams();
-  const setIdFromUrl = searchParams.get('setId');
+  const router = useRouter();
   const queryClient = useQueryClient();
-
-  const [selectedSet, setSelectedSet] = useState<FlashcardSetWithCards | null>(null);
-  const [loadingSet, setLoadingSet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [setToDelete, setSetToDelete] = useState<string | null>(null);
+  const [carouselOpen, setCarouselOpen] = useState(false);
+  const [carouselInitialIndex, setCarouselInitialIndex] = useState(0);
 
   // Query for fetching flashcard sets
   const { data: sets, isLoading: loading } = useQuery({
@@ -105,36 +88,9 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
     },
   });
 
-  useEffect(() => {
-    if (setIdFromUrl && !selectedSet) {
-      handleViewSet(setIdFromUrl);
-    }
-  }, [setIdFromUrl]);
-
-  const handleViewSet = async (setId: string) => {
-    setLoadingSet(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/flashcards/${setId}`);
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => null);
-        throw new Error(body?.error || res.statusText || 'Failed to fetch');
-      }
-
-      const data = (await res.json()) as FlashcardSetWithCards;
-      setSelectedSet(data);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load flashcard set');
-    } finally {
-      setLoadingSet(false);
-    }
-  };
-
-  const handleBack = () => {
-    setSelectedSet(null);
-    // Update URL to remove setId param
-    window.history.pushState({}, '', '/dashboard/flashcards');
+  const handleViewSet = (setId: string) => {
+    // navigate to the dedicated set page (no sidebar shown there)
+    router.push(`/dashboard/flashcards/${setId}`);
   };
 
   const handleDeleteSet = async (setId: string, e?: React.MouseEvent) => {
@@ -151,55 +107,14 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
     deleteMutation.mutate(setToDelete);
   };
 
-  if (selectedSet) {
-    return (
-      <div>
-        <div className="mb-6 flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Sets
-          </Button>
-        </div>
+  const handleCardClick = (index: number) => {
+    setCarouselInitialIndex(index);
+    setCarouselOpen(true);
+  };
 
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            {selectedSet.title || 'Untitled Set'}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {selectedSet.cards.length} cards • Created{' '}
-            {new Date(selectedSet.createdAt).toLocaleDateString()}
-          </p>
-        </div>
-
-        {loadingSet && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
-          </div>
-        )}
-
-        {!loadingSet && selectedSet.cards.length === 0 && (
-          <Card className="p-6">
-            <CardContent>
-              <div className="text-sm text-gray-600">No cards in this set.</div>
-            </CardContent>
-          </Card>
-        )}
-
-        {!loadingSet && selectedSet.cards.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {selectedSet.cards.map((card, index) => (
-              <FlashCard
-                key={card.id}
-                question={card.question}
-                answer={card.answer}
-                index={index}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
+  const handleCloseCarousel = () => {
+    setCarouselOpen(false);
+  };
 
   return (
     <div>

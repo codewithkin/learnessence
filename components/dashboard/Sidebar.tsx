@@ -36,7 +36,10 @@ export function Sidebar({ user }: SidebarProps) {
   };
 
   return (
-    <aside className="w-64 bg-white dark:bg-[#1E293B] border-r border-border flex flex-col h-screen">
+    <aside
+      id="dashboard-sidebar"
+      className="w-64 bg-white dark:bg-[#1E293B] border-r border-border flex flex-col h-screen"
+    >
       {/* Logo Header */}
       <div className="p-6">
         <Link href="/dashboard" className="flex items-center gap-2">
