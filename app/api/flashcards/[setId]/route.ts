@@ -81,7 +81,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Delete the flashcard set (this will cascade delete all cards due to Prisma schema)
+    // Delete all cards in the set first (as a safe fallback)
+    await prisma.flashcard.deleteMany({
+      where: {
+        setId: setId,
+      },
+    });
+
+    // Delete the flashcard set
     await prisma.flashcardSet.delete({
       where: {
         id: setId,

@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import FlashCard from '@/components/flashcards/FlashCard';
 import { ArrowLeft, Loader2, Folder, FolderOpen, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/axiosClient';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -59,39 +61,40 @@ interface FlashcardsContentProps {
 export default function FlashcardsContent({ user }: FlashcardsContentProps) {
   const searchParams = useSearchParams();
   const setIdFromUrl = searchParams.get('setId');
+  const queryClient = useQueryClient();
 
-  const [sets, setSets] = useState<FlashcardSet[] | null>(null);
   const [selectedSet, setSelectedSet] = useState<FlashcardSetWithCards | null>(null);
-  const [loading, setLoading] = useState(false);
   const [loadingSet, setLoadingSet] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [setToDelete, setSetToDelete] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSets = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/flashcards?userId=${user.id}`);
+  // Query for fetching flashcard sets
+  const { data: sets, isLoading: loading } = useQuery({
+    queryKey: ['flashcardSets', user.id],
+    queryFn: async () => {
+      const res = await api.get(`/api/flashcards?userId=${user.id}`);
+      return res.data as FlashcardSet[];
+    },
+  });
 
-        if (!res.ok) {
-          const body = await res.json().catch(() => null);
-          throw new Error(body?.error || res.statusText || 'Failed to fetch');
-        }
-
-        const data = (await res.json()) as FlashcardSet[];
-        setSets(data);
-      } catch (err: any) {
-        setError(err?.message || 'Failed to load flashcards');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSets();
-  }, [user.id]);
+  // Mutation for deleting flashcard sets
+  const deleteMutation = useMutation({
+    mutationFn: async (setId: string) => {
+      await api.delete(`/api/flashcards/${setId}`);
+      return setId;
+    },
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['flashcardSets', user.id] });
+      setDeleteDialogOpen(false);
+      setSetToDelete(null);
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.error || err?.message || 'Failed to delete flashcard set');
+    },
+  });
 
   useEffect(() => {
     if (setIdFromUrl && !selectedSet) {
@@ -136,23 +139,7 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
 
   const confirmDelete = async () => {
     if (!setToDelete) return;
-
-    try {
-      const res = await fetch(`/api/flashcards/${setToDelete}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete flashcard set');
-      }
-
-      // Refresh the sets list
-      setSets((prevSets) => prevSets?.filter((s) => s.id !== setToDelete) || null);
-      setDeleteDialogOpen(false);
-      setSetToDelete(null);
-    } catch (err: any) {
-      alert(err?.message || 'Failed to delete flashcard set');
-    }
+    deleteMutation.mutate(setToDelete);
   };
 
   if (selectedSet) {
@@ -239,26 +226,35 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
         <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {sets.map((set, index) => {
             const isHovered = hoveredId === set.id;
+            const isDeleting = deleteMutation.isPending && setToDelete === set.id;
             const FolderIcon = isHovered ? FolderOpen : Folder;
 
             return (
               <ContextMenu key={set.id}>
                 <ContextMenuTrigger asChild>
                   <div
-                    className="group cursor-pointer"
-                    onClick={() => handleViewSet(set.id)}
-                    onMouseEnter={() => setHoveredId(set.id)}
+                    className={`group cursor-pointer ${
+                      isDeleting ? 'pointer-events-none opacity-50' : ''
+                    }`}
+                    onClick={() => !isDeleting && handleViewSet(set.id)}
+                    onMouseEnter={() => !isDeleting && setHoveredId(set.id)}
                     onMouseLeave={() => setHoveredId(null)}
                   >
                     <div className="flex flex-col items-center text-center p-4 rounded-lg hover:bg-accent/50 transition-all">
                       <div className="relative mb-3">
-                        <FolderIcon
-                          className={`h-20 w-20 ${isHovered ? 'text-blue-600' : 'text-blue-500'} fill-blue-500 transition-colors`}
-                          strokeWidth={1.5}
-                        />
-                        <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
-                          {set.cardCount}
-                        </div>
+                        {isDeleting ? (
+                          <Loader2 className="h-20 w-20 text-blue-500 animate-spin" />
+                        ) : (
+                          <FolderIcon
+                            className={`h-20 w-20 ${isHovered ? 'text-blue-600' : 'text-blue-500'} fill-blue-500 transition-colors`}
+                            strokeWidth={1.5}
+                          />
+                        )}
+                        {!isDeleting && (
+                          <div className="absolute -bottom-1 -right-1 bg-purple-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-sm">
+                            {set.cardCount}
+                          </div>
+                        )}
                       </div>
                       <p className="text-sm font-medium text-foreground line-clamp-2 group-hover:text-indigo-600 transition-colors">
                         {set.title || 'Untitled Set'}
@@ -304,10 +300,23 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" disabled={deleteMutation.isPending}>
+                Cancel
+              </Button>
             </DialogClose>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

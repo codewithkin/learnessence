@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       createdAt: set.createdAt,
       updatedAt: set.updatedAt,
       userId: set.userId,
-      noteId: set.noteId,
+      noteId: set.sourceNoteId,
       cardCount: set.cards.length,
     }));
 
