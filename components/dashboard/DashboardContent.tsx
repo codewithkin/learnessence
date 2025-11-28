@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Plus, FileText, Mic, ChevronDown } from 'lucide-react';
+import { FileText, Mic, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface DashboardContentProps {
@@ -35,17 +35,22 @@ export function DashboardContent({ userId, userName }: DashboardContentProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-              <Plus className="h-4 w-4 mr-2" />
               Create New
               <ChevronDown className="h-4 w-4 ml-2" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => router.push('/dashboard/notes/new')}>
+            <DropdownMenuItem
+              onClick={() => router.push('/dashboard/notes/new')}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+            >
               <FileText className="h-4 w-4 mr-2" />
               Note
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push('/dashboard/voice')}>
+            <DropdownMenuItem
+              onClick={() => router.push('/dashboard/voice')}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+            >
               <Mic className="h-4 w-4 mr-2" />
               Voice Capture
             </DropdownMenuItem>

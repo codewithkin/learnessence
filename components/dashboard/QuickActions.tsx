@@ -1,63 +1,98 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { FileText, Sparkles, Layers, Mic } from 'lucide-react';
+import { FileText, Layers, Mic, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/axiosClient';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const actions = [
-  {
-    icon: FileText,
-    label: 'Create Note',
-    description: 'Start a new note',
-    href: '/dashboard/notes/new',
-    color: 'text-indigo-500',
-  },
-  {
-    icon: Sparkles,
-    label: 'Generate Summary',
-    description: 'Summarize your content',
-    href: '/dashboard/summaries/new',
-    color: 'text-amber-500',
-  },
-  {
-    icon: Layers,
-    label: 'Study Flashcards',
-    description: 'Review your cards',
-    href: '/dashboard/flashcards',
-    color: 'text-indigo-500',
-  },
-  {
-    icon: Mic,
-    label: 'Start Voice Capture',
-    description: 'Speak your thoughts',
-    href: '/dashboard/voice',
-    color: 'text-indigo-500',
-  },
-];
+interface StatsData {
+  notes: number;
+  flashcardSets: number;
+  flashcards: number;
+  summaries: number;
+  transcriptions: number;
+}
 
-export function QuickActions() {
-  const router = useRouter();
+interface UserStatsProps {
+  userId: string;
+}
+
+export function UserStats({ userId }: UserStatsProps) {
+  const { data: stats, isLoading } = useQuery<StatsData>({
+    queryKey: ['userStats', userId],
+    queryFn: async () => {
+      const response = await api.get('/api/stats');
+      return response.data;
+    },
+  });
+
+  const statCards = [
+    {
+      icon: FileText,
+      label: 'Notes',
+      count: stats?.notes || 0,
+      color: 'text-white',
+      bgColor: 'bg-blue-500',
+      textColor: 'text-white',
+    },
+    {
+      icon: Layers,
+      label: 'Flashcard Sets',
+      count: stats?.flashcardSets || 0,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
+      textColor: 'text-foreground',
+    },
+    {
+      icon: BookOpen,
+      label: 'Total Flashcards',
+      count: stats?.flashcards || 0,
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
+      textColor: 'text-foreground',
+    },
+    {
+      icon: Mic,
+      label: 'Voice Notes',
+      count: stats?.transcriptions || 0,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
+      textColor: 'text-foreground',
+    },
+  ];
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="p-4 rounded-xl">
+            <Skeleton className="h-5 w-5 mb-2" />
+            <Skeleton className="h-4 w-16 mb-1" />
+            <Skeleton className="h-6 w-10" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {actions.map((action, index) => {
-        const Icon = action.icon;
+      {statCards.map((stat, index) => {
+        const Icon = stat.icon;
 
         return (
           <motion.div
-            key={action.label}
+            key={stat.label}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: index * 0.05, ease: 'easeOut' }}
           >
-            <Card
-              className="p-6 rounded-2xl shadow-sm border border-border cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-colors"
-              onClick={() => router.push(action.href)}
-            >
-              <Icon className={`h-6 w-6 ${action.color} mb-3`} />
-              <h3 className="font-semibold text-foreground mb-1">{action.label}</h3>
-              <p className="text-sm text-muted-foreground">{action.description}</p>
+            <Card className={`p-4 rounded-xl shadow-sm border border-border ${stat.bgColor}`}>
+              <Icon className={`h-5 w-5 ${stat.color} mb-2`} />
+              <h3 className={`font-semibold ${stat.textColor} mb-1`}>{stat.label}</h3>
+              <p className={`text-xl font-bold ${stat.textColor}`}>{stat.count}</p>
             </Card>
           </motion.div>
         );
