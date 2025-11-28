@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { FileText, Layers, Mic, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/axiosClient';
@@ -30,36 +29,29 @@ export function UserStats({ userId }: UserStatsProps) {
 
   const statCards = [
     {
-      icon: FileText,
       label: 'Notes',
       count: stats?.notes || 0,
-      color: 'text-white',
-      bgColor: 'bg-blue-500',
       textColor: 'text-white',
+      bgColor: 'bg-blue-500',
     },
     {
-      icon: Layers,
       label: 'Flashcard Sets',
       count: stats?.flashcardSets || 0,
-      color: 'text-emerald-500',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20',
+      // default card background (no extra bg class)
       textColor: 'text-foreground',
+      bgColor: '',
     },
     {
-      icon: BookOpen,
       label: 'Total Flashcards',
       count: stats?.flashcards || 0,
-      color: 'text-purple-500',
-      bgColor: 'bg-purple-50 dark:bg-purple-950/20',
       textColor: 'text-foreground',
+      bgColor: '',
     },
     {
-      icon: Mic,
       label: 'Voice Notes',
       count: stats?.transcriptions || 0,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-50 dark:bg-orange-950/20',
       textColor: 'text-foreground',
+      bgColor: '',
     },
   ];
 
@@ -80,8 +72,6 @@ export function UserStats({ userId }: UserStatsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {statCards.map((stat, index) => {
-        const Icon = stat.icon;
-
         return (
           <motion.div
             key={stat.label}
@@ -89,10 +79,9 @@ export function UserStats({ userId }: UserStatsProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: index * 0.05, ease: 'easeOut' }}
           >
-            <Card className={`p-4 rounded-xl shadow-sm border border-border ${stat.bgColor}`}>
-              <Icon className={`h-5 w-5 ${stat.color} mb-2`} />
-              <h3 className={`font-semibold ${stat.textColor} mb-1`}>{stat.label}</h3>
-              <p className={`text-xl font-bold ${stat.textColor}`}>{stat.count}</p>
+            <Card className={`p-4 rounded-xl gap-2 shadow-sm border border-border ${stat.bgColor}`}>
+              <h3 className={`font-medium ${stat.textColor} text-md`}>{stat.label}</h3>
+              <p className={`text-4xl font-semibold ${stat.textColor}`}>{stat.count}</p>
             </Card>
           </motion.div>
         );
