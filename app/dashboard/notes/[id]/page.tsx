@@ -54,7 +54,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
   return (
     <div className="flex h-screen bg-white">
       <Sidebar user={session?.user} />
-      <Container>
+      <Container className="pt-16 md:pt-0">
         <NoteDetail note={note} isOwner={isOwner} />
       </Container>
     </div>

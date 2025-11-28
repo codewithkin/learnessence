@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LayoutDashboard, FileText, Layers, Mic, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, Layers, Mic, Settings, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Lightbulb } from 'lucide-react';
@@ -24,6 +26,7 @@ const navItems = [
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -34,14 +37,11 @@ export function Sidebar({ user }: SidebarProps) {
       .slice(0, 2);
   };
 
-  return (
-    <aside
-      id="dashboard-sidebar"
-      className="w-64 bg-white dark:bg-[#1E293B] border-r border-border flex flex-col h-screen"
-    >
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
       {/* Logo Header */}
       <div className="p-6">
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
             <Lightbulb className="h-5 w-5 text-white" />
           </div>
@@ -56,7 +56,7 @@ export function Sidebar({ user }: SidebarProps) {
           const isActive = pathname === item.href;
 
           return (
-            <Link key={item.href} href={item.href}>
+            <Link key={item.href} href={item.href} onClick={() => setOpen(false)}>
               <Button
                 variant="ghost"
                 className={`w-full justify-start gap-3 rounded-xl transition-colors duration-150 ${
@@ -89,7 +89,7 @@ export function Sidebar({ user }: SidebarProps) {
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
               </div>
             </div>
-            <Link href="/dashboard/settings">
+            <Link href="/dashboard/settings" onClick={() => setOpen(false)}>
               <Button
                 variant="ghost"
                 size="sm"
@@ -113,7 +113,7 @@ export function Sidebar({ user }: SidebarProps) {
                 <p className="text-xs text-muted-foreground">Preview only</p>
               </div>
             </div>
-            <Link href="/auth">
+            <Link href="/auth" onClick={() => setOpen(false)}>
               <Button variant="outline" size="sm" className="w-full">
                 Sign in to edit
               </Button>
@@ -121,6 +121,33 @@ export function Sidebar({ user }: SidebarProps) {
           </div>
         )}
       </div>
-    </aside>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Mobile Sheet */}
+      <div className="md:hidden">
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="fixed top-4 left-4 z-40 md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-64 p-0 bg-white dark:bg-[#1E293B]">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Desktop Sidebar */}
+      <aside
+        id="dashboard-sidebar"
+        className="hidden md:flex w-64 bg-white dark:bg-[#1E293B] border-r border-border flex-col h-screen"
+      >
+        <SidebarContent />
+      </aside>
+    </>
   );
 }

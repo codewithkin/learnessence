@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex h-screen">
       <Sidebar user={session.user} />
-      <main className="flex-1 px-8 py-6 bg-[#F9FAFB] dark:bg-[#0F172A] overflow-y-auto">
+      <main className="flex-1 px-4 md:px-8 py-6 bg-[#F9FAFB] dark:bg-[#0F172A] overflow-y-auto pt-16 md:pt-6">
         <DashboardContent userId={session.user.id} userName={session.user.name} />
       </main>
     </div>

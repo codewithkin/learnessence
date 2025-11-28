@@ -25,7 +25,7 @@ export default async function NotesIndexPage() {
   return (
     <div className="flex h-screen bg-white">
       <Sidebar user={session.user} />
-      <main className="flex-1 overflow-y-auto p-8 bg-[#F9FAFB]">
+      <main className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#F9FAFB] pt-16 md:pt-8">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">All Notes</h1>

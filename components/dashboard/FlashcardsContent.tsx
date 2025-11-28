@@ -124,7 +124,7 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
       </div>
 
       {loading && (
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {[...Array(12)].map((_, i) => (
             <div key={i} className="flex flex-col items-center text-center p-4">
               <div className="relative mb-3">
@@ -158,7 +158,7 @@ export default function FlashcardsContent({ user }: FlashcardsContentProps) {
       )}
 
       {!loading && sets && sets.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {sets.map((set, index) => {
             const isHovered = hoveredId === set.id;
             const isDeleting = deleteMutation.isPending && setToDelete === set.id;

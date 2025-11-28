@@ -16,7 +16,7 @@ export default async function FlashcardsPage() {
   return (
     <div className="flex h-screen bg-white">
       <Sidebar user={session.user} />
-      <main className="flex-1 overflow-y-auto px-8 py-6 bg-[#F9FAFB]">
+      <main className="flex-1 overflow-y-auto px-4 md:px-8 py-6 bg-[#F9FAFB] pt-16 md:pt-6">
         <FlashcardsContent user={session.user} />
       </main>
     </div>

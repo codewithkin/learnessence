@@ -207,7 +207,7 @@ export default function VoiceInputContent() {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="p-12 rounded-2xl shadow-sm border border-gray-200">
+            <Card className="p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex flex-col items-center text-center">
                 <motion.div
                   className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center mb-6"
@@ -248,7 +248,7 @@ export default function VoiceInputContent() {
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="p-12 rounded-2xl shadow-sm border border-gray-200">
+            <Card className="p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex flex-col items-center text-center">
                 <motion.div
                   className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center mb-6 relative"
@@ -304,7 +304,7 @@ export default function VoiceInputContent() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="p-12 rounded-2xl shadow-sm border border-gray-200">
+            <Card className="p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex flex-col items-center text-center">
                 <div className="w-24 h-24 rounded-full bg-indigo-100 flex items-center justify-center mb-6">
                   <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
@@ -331,7 +331,7 @@ export default function VoiceInputContent() {
             <div className="md:flex md:items-start md:gap-6">
               {/* Action buttons card */}
               <div className="w-full">
-                <Card className="p-8 rounded-2xl shadow-sm border border-gray-200">
+                <Card className="p-4 rounded-2xl shadow-sm border border-gray-200">
                   <div className="flex items-start gap-4 mb-6">
                     <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center shrink-0">
                       <FileText className="w-6 h-6 text-green-600" />
